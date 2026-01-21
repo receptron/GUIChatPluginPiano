@@ -83,8 +83,15 @@ function sleep(ms: number): Promise<void> {
 /**
  * Simple piano synthesizer using Web Audio API
  */
+type SoundfontInstrument = {
+  play: (note: string, when?: number, options?: { gain?: number; duration?: number }) => void;
+};
+
 export class PianoSynth {
   private audioContext: AudioContext;
+  private instrument: SoundfontInstrument | null = null;
+  private instrumentPromise: Promise<SoundfontInstrument> | null = null;
+  private instrumentFailed = false;
 
   constructor() {
     this.audioContext = new AudioContext();
@@ -97,32 +104,16 @@ export class PianoSynth {
    */
   playNote(note: string, duration: number = 500): void {
     try {
-      const frequency = noteToFrequency(note);
-      const oscillator = this.audioContext.createOscillator();
-      const gainNode = this.audioContext.createGain();
+      if (this.instrument) {
+        this.instrument.play(note, this.audioContext.currentTime, {
+          gain: 0.8,
+          duration: duration / 1000,
+        });
+        return;
+      }
 
-      // Use a more piano-like waveform (triangle is softer than sine)
-      oscillator.type = 'triangle';
-      oscillator.frequency.value = frequency;
-
-      // ADSR envelope for more natural sound
-      const now = this.audioContext.currentTime;
-      const attackTime = 0.01;  // 10ms attack
-      const decayTime = 0.1;    // 100ms decay
-      const sustainLevel = 0.3; // 30% sustain level
-      const releaseTime = 0.1;  // 100ms release
-
-      gainNode.gain.setValueAtTime(0, now);
-      gainNode.gain.linearRampToValueAtTime(0.5, now + attackTime);
-      gainNode.gain.exponentialRampToValueAtTime(sustainLevel, now + attackTime + decayTime);
-      gainNode.gain.setValueAtTime(sustainLevel, now + duration / 1000 - releaseTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, now + duration / 1000);
-
-      oscillator.connect(gainNode);
-      gainNode.connect(this.audioContext.destination);
-
-      oscillator.start(now);
-      oscillator.stop(now + duration / 1000);
+      // Fallback while soundfont is loading or unavailable.
+      this.playSynthNote(note, duration);
     } catch (error) {
       console.error('Error playing note:', error);
     }
@@ -158,5 +149,75 @@ export class PianoSynth {
     if (this.audioContext.state === 'suspended') {
       await this.audioContext.resume();
     }
+    void this.ensureInstrument();
+  }
+
+  private async ensureInstrument(): Promise<void> {
+    if (this.instrument || this.instrumentFailed) return;
+    if (!this.instrumentPromise) {
+      this.instrumentPromise = (async () => {
+        try {
+          // @ts-expect-error soundfont-player has no types
+          const Soundfont = (await import("soundfont-player")).default;
+          return await Soundfont.instrument(
+            this.audioContext,
+            "acoustic_grand_piano",
+            { soundfont: "MusyngKite" }
+          );
+        } catch (error) {
+          this.instrumentFailed = true;
+          throw error;
+        }
+      })();
+    }
+
+    try {
+      this.instrument = await this.instrumentPromise;
+    } catch (error) {
+      console.warn("Soundfont load failed, using synth fallback.", error);
+    }
+  }
+
+  private playSynthNote(note: string, duration: number): void {
+    const frequency = noteToFrequency(note);
+    const oscillator = this.audioContext.createOscillator();
+    const overtone = this.audioContext.createOscillator();
+    const filter = this.audioContext.createBiquadFilter();
+    const gainNode = this.audioContext.createGain();
+
+    // Blend a soft fundamental with a slightly detuned overtone.
+    oscillator.type = 'sine';
+    oscillator.frequency.value = frequency;
+    overtone.type = 'triangle';
+    overtone.frequency.value = frequency * 2;
+    overtone.detune.value = -6;
+
+    filter.type = 'lowpass';
+    filter.frequency.value = 1800;
+    filter.Q.value = 0.6;
+
+    // ADSR envelope for more natural sound
+    const now = this.audioContext.currentTime;
+    const attackTime = 0.003;  // quick hammer attack
+    const decayTime = 0.25;    // longer decay
+    const sustainLevel = 0.08; // piano-like sustain
+    const releaseTime = 0.12;  // short release
+
+    gainNode.gain.setValueAtTime(0, now);
+    gainNode.gain.linearRampToValueAtTime(0.7, now + attackTime);
+    gainNode.gain.exponentialRampToValueAtTime(sustainLevel, now + attackTime + decayTime);
+    const releaseStart = Math.max(now + attackTime + decayTime, now + duration / 1000 - releaseTime);
+    gainNode.gain.setValueAtTime(sustainLevel, releaseStart);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, releaseStart + releaseTime);
+
+    oscillator.connect(filter);
+    overtone.connect(filter);
+    filter.connect(gainNode);
+    gainNode.connect(this.audioContext.destination);
+
+    oscillator.start(now);
+    overtone.start(now);
+    oscillator.stop(releaseStart + releaseTime);
+    overtone.stop(releaseStart + releaseTime);
   }
 }

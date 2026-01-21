@@ -87,6 +87,7 @@
   "license": "MIT",
   "dependencies": {
     "gui-chat-protocol": "^0.0.1",
-    "openai": "^4.77.0"
+    "openai": "^4.77.0",
+    "soundfont-player": "^0.12.0"
   }
 }
