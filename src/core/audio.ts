@@ -88,14 +88,12 @@ type SoundfontInstrument = {
 };
 
 export class PianoSynth {
-  private audioContext: AudioContext;
+  private audioContext: AudioContext | null = null;
   private instrument: SoundfontInstrument | null = null;
   private instrumentPromise: Promise<SoundfontInstrument> | null = null;
   private instrumentFailed = false;
 
-  constructor() {
-    this.audioContext = new AudioContext();
-  }
+  constructor() {}
 
   /**
    * Play a single note
@@ -104,8 +102,13 @@ export class PianoSynth {
    */
   playNote(note: string, duration: number = 500): void {
     try {
+      const audioContext = this.ensureAudioContext();
+      if (!audioContext) {
+        return;
+      }
+
       if (this.instrument) {
-        this.instrument.play(note, this.audioContext.currentTime, {
+        this.instrument.play(note, audioContext.currentTime, {
           gain: 0.8,
           duration: duration / 1000,
         });
@@ -146,13 +149,18 @@ export class PianoSynth {
    * Resume audio context (needed after user interaction)
    */
   async resume(): Promise<void> {
-    if (this.audioContext.state === 'suspended') {
-      await this.audioContext.resume();
+    const audioContext = this.ensureAudioContext();
+    if (audioContext && audioContext.state === 'suspended') {
+      await audioContext.resume();
     }
     void this.ensureInstrument();
   }
 
   private async ensureInstrument(): Promise<void> {
+    const audioContext = this.ensureAudioContext();
+    if (!audioContext) {
+      return;
+    }
     if (this.instrument || this.instrumentFailed) return;
     if (!this.instrumentPromise) {
       this.instrumentPromise = (async () => {
@@ -160,7 +168,7 @@ export class PianoSynth {
           // @ts-expect-error soundfont-player has no types
           const Soundfont = (await import("soundfont-player")).default;
           return await Soundfont.instrument(
-            this.audioContext,
+            audioContext,
             "acoustic_grand_piano",
             { soundfont: "MusyngKite" }
           );
@@ -179,6 +187,9 @@ export class PianoSynth {
   }
 
   private playSynthNote(note: string, duration: number): void {
+    if (!this.audioContext) {
+      return;
+    }
     const frequency = noteToFrequency(note);
     const oscillator = this.audioContext.createOscillator();
     const overtone = this.audioContext.createOscillator();
@@ -219,5 +230,17 @@ export class PianoSynth {
     overtone.start(now);
     oscillator.stop(releaseStart + releaseTime);
     overtone.stop(releaseStart + releaseTime);
+  }
+
+  private ensureAudioContext(): AudioContext | null {
+    if (!this.audioContext) {
+      try {
+        this.audioContext = new AudioContext();
+      } catch (error) {
+        console.warn("Failed to create AudioContext.", error);
+        return null;
+      }
+    }
+    return this.audioContext;
   }
 }
