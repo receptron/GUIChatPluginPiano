@@ -1,15 +1,15 @@
 /**
- * MulmoChat Quiz Plugin - React Implementation
+ * MulmoChat Piano Plugin - React Implementation
  *
  * Full React plugin with UI components.
- * Import from "@mulmochat-plugin/quiz/react"
+ * Import from "@gui-chat-plugin/piano/react"
  */
 
 // Import styles for React components
 import "../style.css";
 
 import type { ToolPluginReact } from "gui-chat-protocol/react";
-import type { QuizData, QuizArgs } from "../core/types";
+import type { PianoToolData, PianoJsonData, PianoArgs } from "../core/types";
 import { pluginCore } from "../core/plugin";
 import { View } from "./View";
 import { Preview } from "./Preview";
@@ -19,21 +19,22 @@ import { Preview } from "./Preview";
 // ============================================================================
 
 /**
- * Quiz plugin instance with React components
+ * Piano plugin instance with React components
  */
-export const plugin: ToolPluginReact<never, QuizData, QuizArgs> = {
+export const plugin: ToolPluginReact<PianoToolData, PianoJsonData, PianoArgs> = {
   ...pluginCore,
   ViewComponent: View,
   PreviewComponent: Preview,
 };
 
-// Quiz-specific types
-export type { QuizQuestion, QuizData, QuizArgs } from "../core/types";
+// Piano-specific types
+export type { MelodyData, PianoState, PianoToolData, PianoJsonData, PianoArgs } from "../core/types";
 
 // Core plugin utilities
-export { pluginCore, executeQuiz } from "../core/plugin";
-export { TOOL_NAME, TOOL_DEFINITION } from "../core/definition";
+export { pluginCore, executePiano } from "../core/plugin";
+export { TOOL_NAME, TOOL_DEFINITION, SYSTEM_PROMPT } from "../core/definition";
 export { SAMPLES } from "../core/samples";
+export { PianoSynth, noteToFrequency, chordToNotes } from "../core/audio";
 
 // Export components for direct use
 export { View, Preview };

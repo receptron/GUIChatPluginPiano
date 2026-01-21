@@ -1,152 +1,193 @@
 /**
- * Quiz View Component (React)
+ * Piano View Component (React)
  */
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import type { ViewComponentProps } from "gui-chat-protocol";
-import type { QuizData } from "../core/types";
+import type { PianoToolData, PianoJsonData } from "../core/types";
+import { PianoSynth } from "../core/audio";
 import { TOOL_NAME } from "../core/definition";
 
-type ViewProps = ViewComponentProps<never, QuizData>;
+type ViewProps = ViewComponentProps<PianoToolData, PianoJsonData>;
 
-export function View({ selectedResult, sendTextMessage, onUpdateResult }: ViewProps) {
-  const [quizData, setQuizData] = useState<QuizData | null>(null);
-  const [userAnswers, setUserAnswers] = useState<(number | null)[]>([]);
+export function View({ selectedResult }: ViewProps) {
+  const [pianoData, setPianoData] = useState<PianoToolData | null>(null);
+  const [activeNotes, setActiveNotes] = useState<Set<string>>(new Set());
+  const [isPlayingMelody, setIsPlayingMelody] = useState(false);
+  const synthRef = useRef<PianoSynth | null>(null);
 
   useEffect(() => {
-    if (selectedResult?.toolName === TOOL_NAME && selectedResult.jsonData) {
-      const data = selectedResult.jsonData as QuizData;
-      setQuizData(data);
-      // Restore user answers from viewState or initialize new array
-      if (selectedResult.viewState?.userAnswers) {
-        setUserAnswers(selectedResult.viewState.userAnswers as (number | null)[]);
-      } else {
-        setUserAnswers(new Array(data.questions.length).fill(null));
+    synthRef.current = new PianoSynth();
+
+    return () => {
+      synthRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (selectedResult?.toolName === TOOL_NAME && selectedResult.data) {
+      const data = selectedResult.data as PianoToolData;
+      setPianoData(data);
+
+      // Auto-play based on action
+      if (data.state.lastPlayed.length > 0) {
+        data.state.lastPlayed.forEach((note) => {
+          playNote(note);
+          setTimeout(() => releaseNote(note), 500);
+        });
+      }
+
+      // Auto-play melody if isPlaying is true
+      if (data.state.isPlaying && data.melody) {
+        playMelodySequence(data);
       }
     }
   }, [selectedResult]);
 
-  // Save answers to viewState
-  const updateAnswers = useCallback(
-    (newAnswers: (number | null)[]) => {
-      setUserAnswers(newAnswers);
-      if (onUpdateResult) {
-        onUpdateResult({
-          viewState: { userAnswers: newAnswers },
-        });
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.repeat) return;
+      const key = event.key.toLowerCase();
+      const note = keyMap[key];
+      if (note) {
+        playNote(note);
       }
-    },
-    [onUpdateResult]
-  );
+    };
 
-  const handleAnswerChange = (qIndex: number, cIndex: number) => {
-    const newAnswers = [...userAnswers];
-    newAnswers[qIndex] = cIndex;
-    updateAnswers(newAnswers);
-  };
+    const handleKeyUp = (event: KeyboardEvent) => {
+      const key = event.key.toLowerCase();
+      const note = keyMap[key];
+      if (note) {
+        releaseNote(note);
+      }
+    };
 
-  const answeredCount = userAnswers.filter((answer) => answer !== null).length;
-  const allQuestionsAnswered = quizData && answeredCount === quizData.questions.length;
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
 
-  const getChoiceClass = (qIndex: number, cIndex: number): string => {
-    const isSelected = userAnswers[qIndex] === cIndex;
-    if (isSelected) {
-      return "border-blue-500 bg-blue-500/20";
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+    };
+  }, []);
+
+  const playNote = async (note: string) => {
+    if (synthRef.current) {
+      await synthRef.current.resume();
+      synthRef.current.playNote(note);
+      setActiveNotes((prev) => new Set(prev).add(note));
     }
-    return "border-[#4b4b6b] hover:border-[#6b6b8b] hover:bg-[#6b6b8b]/20";
   };
 
-  const handleSubmit = () => {
-    if (!quizData || !allQuestionsAnswered) return;
-
-    const answerText = userAnswers
-      .map((answer, index) => {
-        if (answer === null) return null;
-        const questionNum = index + 1;
-        const choiceLetter = String.fromCharCode(65 + answer);
-        const choiceText = quizData.questions[index].choices[answer];
-        return `Q${questionNum}: ${choiceLetter} - ${choiceText}`;
-      })
-      .filter((text) => text !== null)
-      .join("\n");
-
-    const message = `Here are my answers:\n${answerText}`;
-    sendTextMessage(message);
+  const releaseNote = (note: string) => {
+    setActiveNotes((prev) => {
+      const newSet = new Set(prev);
+      newSet.delete(note);
+      return newSet;
+    });
   };
 
-  if (!quizData) {
+  const playMelodySequence = useCallback(async (data: PianoToolData) => {
+    if (!data.melody || isPlayingMelody) return;
+
+    setIsPlayingMelody(true);
+    const melody = data.melody;
+    const durations = melody.durations || melody.notes.map(() => 500);
+
+    try {
+      if (synthRef.current) {
+        await synthRef.current.resume();
+        await synthRef.current.playMelody(melody.notes, durations);
+      }
+    } finally {
+      setIsPlayingMelody(false);
+    }
+  }, [isPlayingMelody]);
+
+  const isNoteActive = (note: string) => activeNotes.has(note);
+
+  const hasMelody = pianoData?.melody && pianoData.melody.notes.length > 0;
+
+  if (!pianoData) {
     return null;
   }
 
   return (
-    <div className="w-full min-h-[400px] overflow-y-auto p-8 bg-[#1a1a2e] rounded-lg">
-      <div className="max-w-3xl mx-auto">
-        {/* Quiz Title */}
-        {quizData.title && (
-          <h2 className="text-[#f0f0f0] text-3xl font-bold mb-8 text-center">
-            {quizData.title}
+    <div className="w-full min-h-[600px] overflow-x-auto overflow-y-auto p-8 bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 rounded-lg">
+      <div className="w-full mx-auto min-h-[500px] flex flex-col justify-center">
+        {/* Title */}
+        {pianoData.state.title && (
+          <h2 className="text-white text-3xl font-bold mb-8 text-center">
+            {pianoData.state.title}
           </h2>
         )}
 
-        {/* Questions */}
-        <div className="flex flex-col gap-6">
-          {quizData.questions.map((question, qIndex) => (
-            <div
-              key={qIndex}
-              className="bg-[#2d2d44] rounded-lg p-6 border-2 border-[#3d3d5c]"
-            >
-              {/* Question Text */}
-              <div className="text-white text-lg font-semibold mb-4">
-                <span className="text-blue-400 mr-2">{qIndex + 1}.</span>
-                {question.question}
-              </div>
+        {/* Chord Display */}
+        {pianoData.state.chord && (
+          <div className="text-center mb-6 text-2xl font-semibold text-purple-300">
+            {pianoData.state.chord}
+          </div>
+        )}
 
-              {/* Answer Choices */}
-              <div className="flex flex-col gap-3">
-                {question.choices.map((choice, cIndex) => (
-                  <label
-                    key={cIndex}
-                    className={`flex items-start p-4 rounded-lg cursor-pointer transition-all duration-200 border-2 ${getChoiceClass(qIndex, cIndex)}`}
-                  >
-                    <input
-                      type="radio"
-                      name={`question-${qIndex}`}
-                      value={cIndex}
-                      checked={userAnswers[qIndex] === cIndex}
-                      onChange={() => handleAnswerChange(qIndex, cIndex)}
-                      className="mt-1 mr-3 size-4 shrink-0"
-                    />
-                    <span className="text-white flex-1">
-                      <span className="font-semibold mr-2">
-                        {String.fromCharCode(65 + cIndex)}.
-                      </span>
-                      {choice}
-                    </span>
-                  </label>
-                ))}
-              </div>
+        {/* Piano Keyboard */}
+        <div className="flex justify-center mb-8">
+          <div className="relative inline-block">
+            {/* White Keys */}
+            <div className="flex">
+              {whiteKeys.map((key) => (
+                <div
+                  key={key.note}
+                  className={`relative w-12 h-40 bg-white border-2 border-gray-300 rounded-b-lg cursor-pointer hover:bg-gray-100 active:bg-gray-200 transition-colors duration-75 flex items-end justify-center pb-3 ${
+                    isNoteActive(key.note) ? "!bg-blue-200 !border-blue-400" : ""
+                  }`}
+                  onMouseDown={() => playNote(key.note)}
+                  onMouseUp={() => releaseNote(key.note)}
+                  onMouseLeave={() => releaseNote(key.note)}
+                >
+                  <span className="text-xs text-gray-500 font-semibold select-none">
+                    {key.label}
+                  </span>
+                </div>
+              ))}
             </div>
-          ))}
+
+            {/* Black Keys (absolute positioning) */}
+            {blackKeys.map((key) => (
+              <div
+                key={key.note}
+                className={`absolute w-8 h-24 bg-gray-900 border-2 border-gray-700 rounded-b-md cursor-pointer z-10 hover:bg-gray-800 active:bg-gray-700 transition-colors duration-75 ${
+                  isNoteActive(key.note) ? "!bg-blue-600 !border-blue-500" : ""
+                }`}
+                style={{ left: `${key.position}px` }}
+                onMouseDown={() => playNote(key.note)}
+                onMouseUp={() => releaseNote(key.note)}
+                onMouseLeave={() => releaseNote(key.note)}
+              />
+            ))}
+          </div>
         </div>
 
-        {/* Submit Button */}
-        <div className="mt-8 flex justify-center">
-          <button
-            onClick={handleSubmit}
-            disabled={!allQuestionsAnswered}
-            className={`py-3 px-8 rounded-lg text-white font-semibold text-lg transition-colors border-none cursor-pointer ${
-              allQuestionsAnswered
-                ? "bg-blue-600 hover:bg-blue-700"
-                : "bg-gray-600 cursor-not-allowed opacity-50"
-            }`}
-          >
-            Submit Answers
-          </button>
-        </div>
+        {/* Melody Controls */}
+        {hasMelody && (
+          <div className="flex justify-center gap-4 mb-6">
+            <button
+              onClick={() => playMelodySequence(pianoData)}
+              disabled={isPlayingMelody}
+              className={`py-3 px-6 rounded-lg font-semibold text-lg transition-colors ${
+                isPlayingMelody
+                  ? "bg-gray-600 cursor-not-allowed"
+                  : "bg-purple-600 hover:bg-purple-700 text-white"
+              }`}
+            >
+              {isPlayingMelody ? "Playing..." : "Play Melody"}
+            </button>
+          </div>
+        )}
 
-        {/* Progress Indicator */}
-        <div className="mt-4 text-center text-gray-400 text-sm">
-          {answeredCount} / {quizData.questions.length} questions answered
+        {/* Instructions */}
+        <div className="text-center text-gray-300 text-sm">
+          <p>Click keys to play notes</p>
+          <p className="mt-1 text-gray-400">Keyboard: A-K keys play C4-C5</p>
         </div>
       </div>
     </div>
@@ -154,3 +195,54 @@ export function View({ selectedResult, sendTextMessage, onUpdateResult }: ViewPr
 }
 
 export default View;
+
+// Piano keyboard layout (2 octaves: C3-B5)
+const whiteKeys = [
+  { note: "C3", label: "C" },
+  { note: "D3", label: "D" },
+  { note: "E3", label: "E" },
+  { note: "F3", label: "F" },
+  { note: "G3", label: "G" },
+  { note: "A3", label: "A" },
+  { note: "B3", label: "B" },
+  { note: "C4", label: "C" },
+  { note: "D4", label: "D" },
+  { note: "E4", label: "E" },
+  { note: "F4", label: "F" },
+  { note: "G4", label: "G" },
+  { note: "A4", label: "A" },
+  { note: "B4", label: "B" },
+  { note: "C5", label: "C" },
+  { note: "D5", label: "D" },
+  { note: "E5", label: "E" },
+  { note: "F5", label: "F" },
+  { note: "G5", label: "G" },
+  { note: "A5", label: "A" },
+  { note: "B5", label: "B" },
+];
+
+const keyWidth = 48;
+const blackKeyWidth = 32;
+const blackKeys = [
+  { note: "C#3", position: keyWidth - blackKeyWidth / 2 },
+  { note: "D#3", position: keyWidth * 2 - blackKeyWidth / 2 },
+  { note: "F#3", position: keyWidth * 4 - blackKeyWidth / 2 },
+  { note: "G#3", position: keyWidth * 5 - blackKeyWidth / 2 },
+  { note: "A#3", position: keyWidth * 6 - blackKeyWidth / 2 },
+  { note: "C#4", position: keyWidth * 8 - blackKeyWidth / 2 },
+  { note: "D#4", position: keyWidth * 9 - blackKeyWidth / 2 },
+  { note: "F#4", position: keyWidth * 11 - blackKeyWidth / 2 },
+  { note: "G#4", position: keyWidth * 12 - blackKeyWidth / 2 },
+  { note: "A#4", position: keyWidth * 13 - blackKeyWidth / 2 },
+  { note: "C#5", position: keyWidth * 15 - blackKeyWidth / 2 },
+  { note: "D#5", position: keyWidth * 16 - blackKeyWidth / 2 },
+  { note: "F#5", position: keyWidth * 18 - blackKeyWidth / 2 },
+  { note: "G#5", position: keyWidth * 19 - blackKeyWidth / 2 },
+  { note: "A#5", position: keyWidth * 20 - blackKeyWidth / 2 },
+];
+
+const keyMap: Record<string, string> = {
+  "a": "C4", "w": "C#4", "s": "D4", "e": "D#4", "d": "E4",
+  "f": "F4", "t": "F#4", "g": "G4", "y": "G#4", "h": "A4",
+  "u": "A#4", "j": "B4", "k": "C5",
+};

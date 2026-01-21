@@ -30,18 +30,35 @@ export interface UseChatOptions {
  * Mock responses for development without API key
  */
 const MOCK_RESPONSES: Record<string, { content?: string; toolCall?: { name: string; args: unknown } }> = {
-  quiz: {
+  piano: {
     toolCall: {
-      name: "putQuestions",
+      name: "playPiano",
       args: {
-        title: "Demo Quiz",
-        questions: [
-          {
-            question: "What is 2 + 2?",
-            choices: ["3", "4", "5", "6"],
-            correctAnswer: 1,
-          },
-        ],
+        action: "show_keyboard",
+        title: "Piano",
+      },
+    },
+  },
+  chord: {
+    toolCall: {
+      name: "playPiano",
+      args: {
+        action: "play_chord",
+        chord: "C",
+        title: "C Major Chord",
+      },
+    },
+  },
+  melody: {
+    toolCall: {
+      name: "playPiano",
+      args: {
+        action: "play_melody",
+        melody: {
+          notes: ["C4", "D4", "E4", "F4", "G4", "A4", "B4", "C5"],
+          durations: [400, 400, 400, 400, 400, 400, 400, 800],
+        },
+        title: "C Major Scale",
       },
     },
   },
@@ -105,7 +122,7 @@ export function useChat(options: UseChatOptions) {
     const context: ToolContext = {
       currentResult: result.value,
     };
-    return await plugin.execute(context, args);
+    return await plugin.execute(context, args as object);
   };
 
   /**
@@ -116,8 +133,12 @@ export function useChat(options: UseChatOptions) {
 
     // Determine mock response based on message content
     let mockResponse = MOCK_RESPONSES.default;
-    if (lowerMessage.includes("quiz") || lowerMessage.includes("question")) {
-      mockResponse = MOCK_RESPONSES.quiz;
+    if (lowerMessage.includes("piano") || lowerMessage.includes("keyboard")) {
+      mockResponse = MOCK_RESPONSES.piano;
+    } else if (lowerMessage.includes("chord")) {
+      mockResponse = MOCK_RESPONSES.chord;
+    } else if (lowerMessage.includes("melody") || lowerMessage.includes("scale") || lowerMessage.includes("twinkle")) {
+      mockResponse = MOCK_RESPONSES.melody;
     } else if (lowerMessage.includes("hello") || lowerMessage.includes("hi")) {
       mockResponse = MOCK_RESPONSES.hello;
     }

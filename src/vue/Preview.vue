@@ -1,37 +1,29 @@
 <template>
-  <div class="p-3 bg-blue-50 rounded-md">
-    <div v-if="quizData" class="flex flex-col gap-2">
-      <!-- Quiz Title -->
-      <div class="text-sm font-semibold text-gray-800 text-center">
-        {{ quizData.title || "Quiz" }}
+  <div class="p-3 bg-gradient-to-br from-purple-100 to-purple-200 rounded-lg">
+    <div v-if="pianoData" class="flex flex-col gap-2">
+      <!-- Piano Icon -->
+      <div class="text-3xl text-center">🎹</div>
+
+      <!-- Title -->
+      <div class="text-sm font-semibold text-gray-800 text-center truncate">
+        {{ pianoData.state.title || "Piano" }}
       </div>
 
-      <!-- Question Count -->
-      <div class="text-center">
-        <span class="inline-block bg-blue-600 text-white text-xs font-bold py-1 px-3 rounded-full">
-          {{ quizData.questions.length }}
-          {{ quizData.questions.length === 1 ? "Question" : "Questions" }}
+      <!-- Chord Display -->
+      <div v-if="pianoData.state.chord" class="text-center">
+        <span class="inline-block bg-purple-600 text-white text-xs font-bold py-1 px-3 rounded-full">
+          {{ pianoData.state.chord }}
         </span>
       </div>
 
-      <!-- Mini Preview of First Question -->
-      <div class="text-xs text-gray-600 overflow-hidden line-clamp-2">
-        {{ quizData.questions[0]?.question }}
+      <!-- Notes Count (for melody) -->
+      <div v-if="pianoData.melody" class="text-xs text-center text-gray-600">
+        {{ pianoData.melody.notes.length }} notes
       </div>
 
-      <!-- Choice indicators -->
-      <div class="flex justify-center gap-1">
-        <div
-          v-for="(_, index) in Math.min(quizData.questions[0]?.choices.length || 0, 4)"
-          :key="index"
-          class="size-2 bg-gray-400 rounded-full"
-        ></div>
-        <div
-          v-if="(quizData.questions[0]?.choices.length || 0) > 4"
-          class="text-xs text-gray-500"
-        >
-          +{{ quizData.questions[0].choices.length - 4 }}
-        </div>
+      <!-- Last Played Notes -->
+      <div v-else-if="pianoData.state.lastPlayed.length > 0" class="text-xs text-center text-gray-600">
+        {{ pianoData.state.lastPlayed.join(", ") }}
       </div>
     </div>
   </div>
@@ -40,11 +32,11 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { ToolResult } from "gui-chat-protocol";
-import type { QuizData } from "../core/types";
+import type { PianoToolData } from "../core/types";
 
 const props = defineProps<{
   result: ToolResult;
 }>();
 
-const quizData = computed(() => props.result.jsonData as QuizData | null);
+const pianoData = computed(() => props.result.data as PianoToolData | null);
 </script>

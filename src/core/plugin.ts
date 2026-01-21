@@ -1,61 +1,80 @@
 /**
- * MulmoChat Quiz Plugin Core (Framework-agnostic)
+ * MulmoChat Piano Plugin Core (Framework-agnostic)
  *
  * Contains the plugin logic without UI components.
  * Can be used by any framework (Vue, React, etc.)
  */
 
 import type { ToolPluginCore, ToolContext, ToolResult } from "gui-chat-protocol";
-import type { QuizData, QuizArgs } from "./types";
-import { TOOL_DEFINITION } from "./definition";
+import type { PianoToolData, PianoJsonData, PianoArgs, PianoState } from "./types";
+import { TOOL_DEFINITION, SYSTEM_PROMPT, TOOL_NAME } from "./definition";
 import { SAMPLES } from "./samples";
+import { chordToNotes } from "./audio";
 
 // ============================================================================
 // Execute Function
 // ============================================================================
 
-export const executeQuiz = async (
+export const executePiano = async (
   _context: ToolContext,
-  args: QuizArgs,
-): Promise<ToolResult<never, QuizData>> => {
+  args: PianoArgs,
+): Promise<ToolResult<PianoToolData, PianoJsonData>> => {
+  const { action, notes, chord, melody, title } = args;
+
   try {
-    const { title, questions } = args;
-
-    if (!questions || !Array.isArray(questions) || questions.length === 0) {
-      throw new Error("At least one question is required");
-    }
-
-    // Validate questions
-    for (let i = 0; i < questions.length; i++) {
-      const q = questions[i];
-      if (!q.question || typeof q.question !== "string") {
-        throw new Error(`Question ${i + 1} must have a question text`);
-      }
-      if (!Array.isArray(q.choices) || q.choices.length < 2) {
-        throw new Error(`Question ${i + 1} must have at least 2 choices`);
-      }
-      if (q.choices.length > 6) {
-        throw new Error(`Question ${i + 1} cannot have more than 6 choices`);
-      }
-    }
-
-    const quizData: QuizData = {
+    let playedNotes: string[] = [];
+    let state: PianoState = {
+      activeNotes: [],
+      lastPlayed: [],
+      isPlaying: false,
+      currentMelodyIndex: 0,
       title,
-      questions,
     };
 
+    switch (action) {
+      case "play_notes":
+        playedNotes = notes || [];
+        state.lastPlayed = playedNotes;
+        state.activeNotes = playedNotes;
+        break;
+
+      case "play_chord":
+        if (chord) {
+          playedNotes = chordToNotes(chord);
+          state.lastPlayed = playedNotes;
+          state.activeNotes = playedNotes;
+          state.chord = chord;
+        }
+        break;
+
+      case "play_melody":
+        if (melody) {
+          playedNotes = melody.notes;
+          state.isPlaying = true;
+        }
+        break;
+
+      case "show_keyboard":
+        // 鍵盤表示のみ
+        break;
+    }
+
     return {
-      message: `Quiz presented with ${questions.length} question${questions.length > 1 ? "s" : ""}`,
-      jsonData: quizData,
+      toolName: TOOL_NAME,
+      data: { state, melody },
+      jsonData: { success: true, playedNotes, chord },
+      message: `Played: ${playedNotes.join(", ") || "keyboard shown"}`,
+      title: title || chord || "Piano",
       instructions:
-        "The quiz has been presented to the user. Wait for the user to submit their answers. They will tell you their answers in text format.",
+        action === "play_melody"
+          ? "The melody is now playing. Ask the user if they enjoyed it."
+          : "The piano is ready. Ask the user what they would like to play next.",
     };
   } catch (error) {
-    console.error("Quiz creation error", error);
     return {
-      message: `Quiz error: ${error instanceof Error ? error.message : "Unknown error"}`,
-      instructions:
-        "Acknowledge that there was an error creating the quiz and suggest trying again.",
+      message: `Error: ${error}`,
+      jsonData: { success: false, error: String(error) },
+      instructions: "Acknowledge the error and suggest trying again with different notes or chords.",
     };
   }
 };
@@ -64,10 +83,11 @@ export const executeQuiz = async (
 // Core Plugin (without UI components)
 // ============================================================================
 
-export const pluginCore: ToolPluginCore<never, QuizData, QuizArgs> = {
+export const pluginCore: ToolPluginCore<PianoToolData, PianoJsonData, PianoArgs> = {
   toolDefinition: TOOL_DEFINITION,
-  execute: executeQuiz,
-  generatingMessage: "Preparing quiz...",
-  isEnabled: () => true,
+  execute: executePiano,
+  generatingMessage: "Preparing piano...",
+  isEnabled: () => true, // 外部 API 不要
+  systemPrompt: SYSTEM_PROMPT,
   samples: SAMPLES,
 };

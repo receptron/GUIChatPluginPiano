@@ -2,13 +2,16 @@
  * MulmoChat Plugin Core Exports
  *
  * Framework-agnostic types and plugin logic.
- * Import from "@mulmochat-plugin/quiz/core"
+ * Import from "@gui-chat-plugin/piano/core"
  */
 
-// Quiz-specific types
-export type { QuizQuestion, QuizData, QuizArgs } from "./types";
+// Piano-specific types
+export type { MelodyData, PianoState, PianoToolData, PianoJsonData, PianoArgs } from "./types";
 
 // Core plugin
-export { pluginCore, executeQuiz } from "./plugin";
-export { TOOL_NAME, TOOL_DEFINITION } from "./definition";
+export { pluginCore, executePiano } from "./plugin";
+export { TOOL_NAME, TOOL_DEFINITION, SYSTEM_PROMPT } from "./definition";
 export { SAMPLES } from "./samples";
+
+// Audio utilities
+export { PianoSynth, noteToFrequency, chordToNotes } from "./audio";

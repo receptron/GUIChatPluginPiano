@@ -1,15 +1,15 @@
 /**
- * MulmoChat Quiz Plugin - Vue Implementation
+ * MulmoChat Piano Plugin - Vue Implementation
  *
  * Full Vue plugin with UI components.
- * Import from "@mulmochat-plugin/quiz/vue"
+ * Import from "@gui-chat-plugin/piano/vue"
  */
 
 // Import styles for Vue components
 import "../style.css";
 
 import type { ToolPlugin } from "gui-chat-protocol/vue";
-import type { QuizData, QuizArgs } from "../core/types";
+import type { PianoToolData, PianoJsonData, PianoArgs } from "../core/types";
 import { pluginCore } from "../core/plugin";
 import View from "./View.vue";
 import Preview from "./Preview.vue";
@@ -19,21 +19,22 @@ import Preview from "./Preview.vue";
 // ============================================================================
 
 /**
- * Quiz plugin instance with Vue components
+ * Piano plugin instance with Vue components
  */
-export const plugin: ToolPlugin<never, QuizData, QuizArgs> = {
+export const plugin: ToolPlugin<PianoToolData, PianoJsonData, PianoArgs> = {
   ...pluginCore,
   viewComponent: View,
   previewComponent: Preview,
 };
 
-// Quiz-specific types
-export type { QuizQuestion, QuizData, QuizArgs } from "../core/types";
+// Piano-specific types
+export type { MelodyData, PianoState, PianoToolData, PianoJsonData, PianoArgs } from "../core/types";
 
 // Core plugin utilities
-export { pluginCore, executeQuiz } from "../core/plugin";
-export { TOOL_NAME, TOOL_DEFINITION } from "../core/definition";
+export { pluginCore, executePiano } from "../core/plugin";
+export { TOOL_NAME, TOOL_DEFINITION, SYSTEM_PROMPT } from "../core/definition";
 export { SAMPLES } from "../core/samples";
+export { PianoSynth, noteToFrequency, chordToNotes } from "../core/audio";
 
 // Export components for direct use
 export { View, Preview };

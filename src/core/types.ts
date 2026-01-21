@@ -1,30 +1,51 @@
 /**
- * Quiz Plugin Types
+ * Piano Plugin Types
  *
- * Quiz-specific type definitions only.
+ * Piano-specific type definitions only.
  * Common types should be imported directly from gui-chat-protocol.
  */
 
 // ============================================================================
-// Quiz-specific Types
+// Piano-specific Types
 // ============================================================================
 
-/** Single quiz question */
-export interface QuizQuestion {
-  question: string;
-  choices: string[];
-  correctAnswer?: number;
+/** Melody data */
+export interface MelodyData {
+  notes: string[];
+  durations?: number[];
+  tempo?: number;
 }
 
-/** Quiz data stored in result.jsonData */
-export interface QuizData {
+/** Piano state */
+export interface PianoState {
+  activeNotes: string[];
+  lastPlayed: string[];
+  isPlaying: boolean;
+  currentMelodyIndex: number;
   title?: string;
-  questions: QuizQuestion[];
-  userAnswers?: number[];
+  chord?: string;
+  error?: string;
 }
 
-/** Arguments passed to the quiz tool */
-export interface QuizArgs {
+/** Data type for UI (stored in result.data) */
+export interface PianoToolData {
+  state: PianoState;
+  melody?: MelodyData;
+}
+
+/** Data type for LLM (stored in result.jsonData) */
+export interface PianoJsonData {
+  success: boolean;
+  playedNotes?: string[];
+  chord?: string;
+  error?: string;
+}
+
+/** Arguments type (passed from LLM) */
+export interface PianoArgs {
+  action: "play_notes" | "play_chord" | "play_melody" | "show_keyboard";
+  notes?: string[];
+  chord?: string;
+  melody?: MelodyData;
   title?: string;
-  questions: QuizQuestion[];
 }

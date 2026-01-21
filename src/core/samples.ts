@@ -1,66 +1,68 @@
 /**
- * Quiz Sample Data
+ * Piano Sample Data
  */
 
 import type { ToolSample } from "gui-chat-protocol";
 
 export const SAMPLES: ToolSample[] = [
   {
-    name: "JavaScript Quiz",
+    name: "Show Keyboard",
     args: {
-      title: "JavaScript Basics",
-      questions: [
-        {
-          question: "What does 'const' do in JavaScript?",
-          choices: [
-            "Declares a constant variable",
-            "Declares a mutable variable",
-            "Creates a function",
-            "Imports a module",
-          ],
-          correctAnswer: 0,
-        },
-        {
-          question: "Which method adds an element to the end of an array?",
-          choices: ["pop()", "shift()", "push()", "unshift()"],
-          correctAnswer: 2,
-        },
-        {
-          question: "What is the output of: typeof null?",
-          choices: ['"null"', '"undefined"', '"object"', '"boolean"'],
-          correctAnswer: 2,
-        },
-      ],
+      action: "show_keyboard",
+      title: "Piano",
     },
   },
   {
-    name: "World Capitals",
+    name: "Play C Major Chord",
     args: {
-      title: "World Capitals Quiz",
-      questions: [
-        {
-          question: "What is the capital of Japan?",
-          choices: ["Osaka", "Kyoto", "Tokyo", "Hiroshima"],
-          correctAnswer: 2,
-        },
-        {
-          question: "What is the capital of Australia?",
-          choices: ["Sydney", "Melbourne", "Canberra", "Brisbane"],
-          correctAnswer: 2,
-        },
-      ],
+      action: "play_chord",
+      chord: "C",
+      title: "C Major",
     },
   },
   {
-    name: "Simple Yes/No",
+    name: "Play Am Chord",
     args: {
-      questions: [
-        {
-          question: "Is the Earth round?",
-          choices: ["Yes", "No"],
-          correctAnswer: 0,
-        },
-      ],
+      action: "play_chord",
+      chord: "Am",
+      title: "A Minor",
+    },
+  },
+  {
+    name: "Play Single Note (C4)",
+    args: {
+      action: "play_notes",
+      notes: ["C4"],
+      title: "Middle C",
+    },
+  },
+  {
+    name: "Play C Major Scale",
+    args: {
+      action: "play_melody",
+      melody: {
+        notes: ["C4", "D4", "E4", "F4", "G4", "A4", "B4", "C5"],
+        durations: [400, 400, 400, 400, 400, 400, 400, 800],
+        tempo: 120,
+      },
+      title: "C Major Scale",
+    },
+  },
+  {
+    name: "Twinkle Twinkle",
+    args: {
+      action: "play_melody",
+      melody: {
+        notes: [
+          "C4", "C4", "G4", "G4", "A4", "A4", "G4",
+          "F4", "F4", "E4", "E4", "D4", "D4", "C4",
+        ],
+        durations: [
+          500, 500, 500, 500, 500, 500, 1000,
+          500, 500, 500, 500, 500, 500, 1000,
+        ],
+      },
+      title: "Twinkle Twinkle Little Star",
     },
   },
 ];
