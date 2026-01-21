@@ -104,12 +104,19 @@ type SoundfontModule = {
   ) => Promise<SoundfontInstrument>;
 };
 
+const WARMUP_NOTES = [
+  "C3", "C#3", "D3", "D#3", "E3", "F3", "F#3", "G3", "G#3", "A3", "A#3", "B3",
+  "C4", "C#4", "D4", "D#4", "E4", "F4", "F#4", "G4", "G#4", "A4", "A#4", "B4",
+  "C5", "C#5", "D5", "D#5", "E5", "F5", "F#5", "G5", "G#5", "A5", "A#5", "B5",
+];
+
 export class PianoSynth {
   private audioContext: AudioContext | null = null;
   private instrument: SoundfontInstrument | null = null;
   private instrumentPromise: Promise<SoundfontInstrument> | null = null;
   private instrumentFailed = false;
   private audioUnlocked = false;
+  private warmupDone = false;
 
   constructor() {}
 
@@ -133,17 +140,19 @@ export class PianoSynth {
       await this.ensureInstrument();
 
       if (this.instrument) {
-        this.debug("playNote: using soundfont", { note, duration });
-        this.instrument.play(note, audioContext.currentTime, {
+        this.debug("playNote: using soundfont", { note, duration, t: performance.now() });
+        this.instrument.play(note, 0, {
           gain: 0.8,
           duration: duration / 1000,
         });
+        this.debug("playNote: soundfont dispatched", { note, t: performance.now() });
         return;
       }
 
-      this.debug("playNote: using synth fallback", { note, duration });
+      this.debug("playNote: using synth fallback", { note, duration, t: performance.now() });
       // Fallback while soundfont is loading or unavailable.
       this.playSynthNote(note, duration);
+      this.debug("playNote: synth dispatched", { note, t: performance.now() });
     } catch (error) {
       console.error('Error playing note:', error);
     }
@@ -223,6 +232,7 @@ export class PianoSynth {
     try {
       this.instrument = await this.instrumentPromise;
       this.debug("ensureInstrument: loaded");
+      this.warmupInstrument();
     } catch (error) {
       console.warn("Soundfont load failed, using synth fallback.", error);
     }
@@ -313,6 +323,15 @@ export class PianoSynth {
     } catch (error) {
       this.debug("unlockAudioContext: failed", error);
     }
+  }
+
+  private warmupInstrument(): void {
+    if (this.warmupDone || !this.instrument) return;
+    WARMUP_NOTES.forEach((note, index) => {
+      this.instrument?.play(note, index * 0.01, { gain: 0.0001, duration: 0.05 });
+    });
+    this.warmupDone = true;
+    this.debug("warmup: scheduled", { count: WARMUP_NOTES.length });
   }
 
   private shouldUseSoundfont(): boolean {
