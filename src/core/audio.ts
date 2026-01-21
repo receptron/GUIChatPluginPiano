@@ -87,6 +87,23 @@ type SoundfontInstrument = {
   play: (note: string, when?: number, options?: { gain?: number; duration?: number }) => void;
 };
 
+type AudioContextConstructor = new () => AudioContext;
+type GlobalWithPianoDebug = typeof globalThis & {
+  __pianoDebug?: boolean;
+  __pianoAudioContext?: AudioContext;
+  __pianoDisableSoundfont?: boolean;
+  AudioContext?: AudioContextConstructor;
+  webkitAudioContext?: AudioContextConstructor;
+};
+
+type SoundfontModule = {
+  instrument: (
+    audioContext: AudioContext,
+    name: string,
+    options?: { soundfont?: string; format?: string }
+  ) => Promise<SoundfontInstrument>;
+};
+
 export class PianoSynth {
   private audioContext: AudioContext | null = null;
   private instrument: SoundfontInstrument | null = null;
@@ -188,8 +205,8 @@ export class PianoSynth {
       this.instrumentPromise = (async () => {
         try {
           this.debug("ensureInstrument: loading soundfont module");
-          // @ts-ignore no types for soundfont-player
-          const Soundfont = (await import("soundfont-player")).default;
+          // @ts-expect-error no types for soundfont-player
+          const Soundfont = (await import("soundfont-player")).default as SoundfontModule;
           this.debug("ensureInstrument: loading instrument");
           return await Soundfont.instrument(
             audioContext,
@@ -262,14 +279,15 @@ export class PianoSynth {
   private ensureAudioContext(): AudioContext | null {
     if (!this.audioContext) {
       try {
+        const globalWithPiano = globalThis as GlobalWithPianoDebug;
         const AudioContextConstructor =
-          (globalThis as any).AudioContext || (globalThis as any).webkitAudioContext;
+          globalWithPiano.AudioContext || globalWithPiano.webkitAudioContext;
         if (!AudioContextConstructor) {
           console.warn("AudioContext is not supported in this browser.");
           return null;
         }
         this.audioContext = new AudioContextConstructor();
-        (globalThis as any).__pianoAudioContext = this.audioContext;
+        globalWithPiano.__pianoAudioContext = this.audioContext;
         const createdContext = this.audioContext;
         this.debug("ensureAudioContext: created", { state: createdContext.state });
       } catch (error) {
@@ -299,12 +317,12 @@ export class PianoSynth {
   }
 
   private shouldUseSoundfont(): boolean {
-    if ((globalThis as any).__pianoDisableSoundfont) return false;
+    if ((globalThis as GlobalWithPianoDebug).__pianoDisableSoundfont) return false;
     return true;
   }
 
   private debug(message: string, data?: unknown): void {
-    if (!(globalThis as any).__pianoDebug) return;
+    if (!(globalThis as GlobalWithPianoDebug).__pianoDebug) return;
     if (data === undefined) {
       console.log(`[PianoSynth] ${message}`);
       return;
