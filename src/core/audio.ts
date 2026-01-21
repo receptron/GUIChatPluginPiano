@@ -298,10 +298,7 @@ export class PianoSynth {
 
   private shouldUseSoundfont(): boolean {
     if ((globalThis as any).__pianoDisableSoundfont) return false;
-    if (typeof navigator === "undefined") return true;
-    const ua = navigator.userAgent;
-    const isSafari = /Safari/i.test(ua) && !/Chrome|Chromium|CriOS/i.test(ua);
-    return !isSafari;
+    return true;
   }
 
   private debug(message: string, data?: unknown): void {
