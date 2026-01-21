@@ -92,6 +92,7 @@ export class PianoSynth {
   private instrument: SoundfontInstrument | null = null;
   private instrumentPromise: Promise<SoundfontInstrument> | null = null;
   private instrumentFailed = false;
+  private audioUnlocked = false;
 
   constructor() {}
 
@@ -106,6 +107,10 @@ export class PianoSynth {
       if (!audioContext) {
         this.debug("playNote: no AudioContext available");
         return;
+      }
+
+      if (audioContext.state === "suspended") {
+        await this.resume();
       }
 
       await this.ensureInstrument();
@@ -159,6 +164,9 @@ export class PianoSynth {
       this.debug("resume: resuming AudioContext");
       await audioContext.resume();
     }
+    if (audioContext) {
+      this.unlockAudioContext(audioContext);
+    }
     void this.ensureInstrument();
   }
 
@@ -166,6 +174,13 @@ export class PianoSynth {
     const audioContext = this.ensureAudioContext();
     if (!audioContext) {
       this.debug("ensureInstrument: no AudioContext");
+      return;
+    }
+    if (!this.shouldUseSoundfont()) {
+      if (!this.instrumentFailed) {
+        this.instrumentFailed = true;
+        this.debug("ensureInstrument: soundfont disabled");
+      }
       return;
     }
     if (this.instrument || this.instrumentFailed) return;
@@ -179,7 +194,7 @@ export class PianoSynth {
           return await Soundfont.instrument(
             audioContext,
             "acoustic_grand_piano",
-            { soundfont: "MusyngKite" }
+            { soundfont: "MusyngKite", format: "mp3" }
           );
         } catch (error) {
           this.instrumentFailed = true;
@@ -247,7 +262,13 @@ export class PianoSynth {
   private ensureAudioContext(): AudioContext | null {
     if (!this.audioContext) {
       try {
-        this.audioContext = new AudioContext();
+        const AudioContextConstructor =
+          (globalThis as any).AudioContext || (globalThis as any).webkitAudioContext;
+        if (!AudioContextConstructor) {
+          console.warn("AudioContext is not supported in this browser.");
+          return null;
+        }
+        this.audioContext = new AudioContextConstructor();
         (globalThis as any).__pianoAudioContext = this.audioContext;
         this.debug("ensureAudioContext: created", { state: this.audioContext.state });
       } catch (error) {
@@ -257,6 +278,30 @@ export class PianoSynth {
     }
     this.debug("ensureAudioContext: ready", { state: this.audioContext.state });
     return this.audioContext;
+  }
+
+  private unlockAudioContext(audioContext: AudioContext): void {
+    if (this.audioUnlocked) return;
+    try {
+      const buffer = audioContext.createBuffer(1, 1, audioContext.sampleRate);
+      const source = audioContext.createBufferSource();
+      source.buffer = buffer;
+      source.connect(audioContext.destination);
+      source.start(0);
+      source.stop(0);
+      this.audioUnlocked = true;
+      this.debug("unlockAudioContext: ok");
+    } catch (error) {
+      this.debug("unlockAudioContext: failed", error);
+    }
+  }
+
+  private shouldUseSoundfont(): boolean {
+    if ((globalThis as any).__pianoDisableSoundfont) return false;
+    if (typeof navigator === "undefined") return true;
+    const ua = navigator.userAgent;
+    const isSafari = /Safari/i.test(ua) && !/Chrome|Chromium|CriOS/i.test(ua);
+    return !isSafari;
   }
 
   private debug(message: string, data?: unknown): void {
