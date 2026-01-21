@@ -155,7 +155,7 @@ export function View({ selectedResult }: ViewProps) {
             {blackKeys.map((key) => (
               <div
                 key={key.note}
-                className={`absolute w-8 h-24 bg-gray-900 border-2 border-gray-700 rounded-b-md cursor-pointer z-10 hover:bg-gray-800 active:bg-gray-700 transition-colors duration-75 ${
+                className={`absolute top-0 w-7 h-24 bg-gray-900 border-2 border-gray-700 rounded-b-md cursor-pointer z-10 hover:bg-gray-800 active:bg-gray-700 transition-colors duration-75 ${
                   isNoteActive(key.note) ? "!bg-blue-600 !border-blue-500" : ""
                 }`}
                 style={{ left: `${key.position}px` }}
@@ -222,18 +222,22 @@ const whiteKeys = [
 ];
 
 const keyWidth = 48;
-const blackKeyWidth = 32;
+const blackKeyWidth = 28; // narrower black keys
+// Center black keys on white-key boundaries.
 const blackKeys = [
-  { note: "C#3", position: keyWidth - blackKeyWidth / 2 },
+  // Octave 3: C3=0, D3=1, E3=2, F3=3, G3=4, A3=5, B3=6
+  { note: "C#3", position: keyWidth * 1 - blackKeyWidth / 2 },
   { note: "D#3", position: keyWidth * 2 - blackKeyWidth / 2 },
   { note: "F#3", position: keyWidth * 4 - blackKeyWidth / 2 },
   { note: "G#3", position: keyWidth * 5 - blackKeyWidth / 2 },
   { note: "A#3", position: keyWidth * 6 - blackKeyWidth / 2 },
+  // Octave 4: C4=7, D4=8, E4=9, F4=10, G4=11, A4=12, B4=13
   { note: "C#4", position: keyWidth * 8 - blackKeyWidth / 2 },
   { note: "D#4", position: keyWidth * 9 - blackKeyWidth / 2 },
   { note: "F#4", position: keyWidth * 11 - blackKeyWidth / 2 },
   { note: "G#4", position: keyWidth * 12 - blackKeyWidth / 2 },
   { note: "A#4", position: keyWidth * 13 - blackKeyWidth / 2 },
+  // Octave 5: C5=14, D5=15, E5=16, F5=17, G5=18, A5=19, B5=20
   { note: "C#5", position: keyWidth * 15 - blackKeyWidth / 2 },
   { note: "D#5", position: keyWidth * 16 - blackKeyWidth / 2 },
   { note: "F#5", position: keyWidth * 18 - blackKeyWidth / 2 },
