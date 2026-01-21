@@ -100,14 +100,18 @@ export class PianoSynth {
    * @param note - Note in scientific pitch notation
    * @param duration - Duration in milliseconds (default: 500ms)
    */
-  playNote(note: string, duration: number = 500): void {
+  async playNote(note: string, duration: number = 500): Promise<void> {
     try {
       const audioContext = this.ensureAudioContext();
       if (!audioContext) {
+        this.debug("playNote: no AudioContext available");
         return;
       }
 
+      await this.ensureInstrument();
+
       if (this.instrument) {
+        this.debug("playNote: using soundfont", { note, duration });
         this.instrument.play(note, audioContext.currentTime, {
           gain: 0.8,
           duration: duration / 1000,
@@ -115,6 +119,7 @@ export class PianoSynth {
         return;
       }
 
+      this.debug("playNote: using synth fallback", { note, duration });
       // Fallback while soundfont is loading or unavailable.
       this.playSynthNote(note, duration);
     } catch (error) {
@@ -151,6 +156,7 @@ export class PianoSynth {
   async resume(): Promise<void> {
     const audioContext = this.ensureAudioContext();
     if (audioContext && audioContext.state === 'suspended') {
+      this.debug("resume: resuming AudioContext");
       await audioContext.resume();
     }
     void this.ensureInstrument();
@@ -159,14 +165,17 @@ export class PianoSynth {
   private async ensureInstrument(): Promise<void> {
     const audioContext = this.ensureAudioContext();
     if (!audioContext) {
+      this.debug("ensureInstrument: no AudioContext");
       return;
     }
     if (this.instrument || this.instrumentFailed) return;
     if (!this.instrumentPromise) {
       this.instrumentPromise = (async () => {
         try {
+          this.debug("ensureInstrument: loading soundfont module");
           // @ts-expect-error soundfont-player has no types
           const Soundfont = (await import("soundfont-player")).default;
+          this.debug("ensureInstrument: loading instrument");
           return await Soundfont.instrument(
             audioContext,
             "acoustic_grand_piano",
@@ -174,6 +183,7 @@ export class PianoSynth {
           );
         } catch (error) {
           this.instrumentFailed = true;
+          this.debug("ensureInstrument: failed", error);
           throw error;
         }
       })();
@@ -181,6 +191,7 @@ export class PianoSynth {
 
     try {
       this.instrument = await this.instrumentPromise;
+      this.debug("ensureInstrument: loaded");
     } catch (error) {
       console.warn("Soundfont load failed, using synth fallback.", error);
     }
@@ -188,6 +199,7 @@ export class PianoSynth {
 
   private playSynthNote(note: string, duration: number): void {
     if (!this.audioContext) {
+      this.debug("playSynthNote: no AudioContext");
       return;
     }
     const frequency = noteToFrequency(note);
@@ -236,11 +248,23 @@ export class PianoSynth {
     if (!this.audioContext) {
       try {
         this.audioContext = new AudioContext();
+        (globalThis as any).__pianoAudioContext = this.audioContext;
+        this.debug("ensureAudioContext: created", { state: this.audioContext.state });
       } catch (error) {
         console.warn("Failed to create AudioContext.", error);
         return null;
       }
     }
+    this.debug("ensureAudioContext: ready", { state: this.audioContext.state });
     return this.audioContext;
+  }
+
+  private debug(message: string, data?: unknown): void {
+    if (!(globalThis as any).__pianoDebug) return;
+    if (data === undefined) {
+      console.log(`[PianoSynth] ${message}`);
+      return;
+    }
+    console.log(`[PianoSynth] ${message}`, data);
   }
 }
