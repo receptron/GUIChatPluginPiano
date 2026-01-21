@@ -188,7 +188,7 @@ export class PianoSynth {
       this.instrumentPromise = (async () => {
         try {
           this.debug("ensureInstrument: loading soundfont module");
-          // @ts-expect-error soundfont-player has no types
+          // @ts-ignore no types for soundfont-player
           const Soundfont = (await import("soundfont-player")).default;
           this.debug("ensureInstrument: loading instrument");
           return await Soundfont.instrument(
@@ -270,14 +270,16 @@ export class PianoSynth {
         }
         this.audioContext = new AudioContextConstructor();
         (globalThis as any).__pianoAudioContext = this.audioContext;
-        this.debug("ensureAudioContext: created", { state: this.audioContext.state });
+        const createdContext = this.audioContext;
+        this.debug("ensureAudioContext: created", { state: createdContext.state });
       } catch (error) {
         console.warn("Failed to create AudioContext.", error);
         return null;
       }
     }
-    this.debug("ensureAudioContext: ready", { state: this.audioContext.state });
-    return this.audioContext;
+    const readyContext = this.audioContext;
+    this.debug("ensureAudioContext: ready", { state: readyContext.state });
+    return readyContext;
   }
 
   private unlockAudioContext(audioContext: AudioContext): void {

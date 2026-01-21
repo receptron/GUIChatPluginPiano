@@ -141,3 +141,57 @@ return {
 | 計画と実装の不一致 | 計画ドキュメントの return 文が不完全 | 型定義と Vue/React コンポーネントを確認して補完 |
 
 これらの修正により、ピアノプラグインは正常に動作するようになりました。
+
+## 追加で判明した plan の抜け（Claude 実装後 / Codex 引き継ぎ時）
+
+### 3. **黒鍵の重なり位置・レイヤー指定が不足（Claude 実装後に発覚）**
+
+**状況**
+- 黒鍵が白鍵の下に表示され、横位置もずれて見えた。
+
+**plan の抜け**
+- 黒鍵を「白鍵の上に重ねる」ための `top: 0` の指定や、
+  位置計算の基準（白鍵境界線中心）を明示していなかった。
+
+**修正（Codex）**
+- 黒鍵に `top-0` を追加して確実に白鍵上に配置。
+- 位置計算を `keyWidth * boundary - blackKeyWidth / 2` に統一。
+
+### 4. **ピアノらしい音色（soundfont）実装の手順が未記載（Codex 対応）**
+
+**状況**
+- 既存のシンセ音がピアノらしくない。
+- Safari で無音になる問題が発生。
+
+**plan の抜け**
+- ピアノ音色の実装方法（soundfont の導入や依存追加）が記載されていなかった。
+- Safari の AudioContext 制約や `webkitAudioContext` の扱いが考慮されていなかった。
+
+**修正（Codex）**
+- `soundfont-player` を導入して `acoustic_grand_piano` を使用。
+- `AudioContext` の遅延生成と `webkitAudioContext` フォールバックを追加。
+- user gesture での AudioContext “unlock” を実装。
+
+### 5. **初回クリックだけ音色が違う（ロード待ちの扱いが未記載）**
+
+**状況**
+- soundfont 読み込み前にフォールバック音が鳴り、最初の1音だけ音色が違った。
+
+**plan の抜け**
+- soundfont 読み込み完了までの待機・同期処理が明示されていなかった。
+
+**修正（Codex）**
+- `playNote` で soundfont のロード完了を待つように変更。
+
+### 6. **Safari で soundfont を使う判断基準が未整理**
+
+**状況**
+- Safari では最初 soundfont を無効化していたためシンセ音のみ。
+- 一方、別プロジェクトでは Safari でも soundfont が動作していた。
+
+**plan の抜け**
+- Safari での soundfont 利用可否の判断基準が無かった。
+
+**修正（Codex）**
+- Safari でも soundfont を有効化する方向に切り替え。
+- `globalThis.__pianoDisableSoundfont` で切り替え可能に整理。
