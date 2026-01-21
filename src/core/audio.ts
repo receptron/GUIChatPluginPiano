@@ -205,7 +205,6 @@ export class PianoSynth {
       this.instrumentPromise = (async () => {
         try {
           this.debug("ensureInstrument: loading soundfont module");
-          // @ts-expect-error no types for soundfont-player
           const Soundfont = (await import("soundfont-player")).default as SoundfontModule;
           this.debug("ensureInstrument: loading instrument");
           return await Soundfont.instrument(
