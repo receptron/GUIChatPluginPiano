@@ -7,6 +7,7 @@ import type { ViewComponentProps } from "gui-chat-protocol";
 import type { PianoToolData, PianoJsonData } from "../core/types";
 import { PianoSynth } from "../core/audio";
 import { TOOL_NAME } from "../core/definition";
+import { SAMPLES } from "../core/samples";
 
 type ViewProps = ViewComponentProps<PianoToolData, PianoJsonData>;
 
@@ -42,7 +43,7 @@ export function View({ selectedResult }: ViewProps) {
         playMelodySequence(data);
       }
     }
-  }, [selectedResult]);
+  }, [selectedResult, playNote, releaseNote, playMelodySequence]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -74,12 +75,15 @@ export function View({ selectedResult }: ViewProps) {
   const playNote = async (note: string) => {
     if (synthRef.current) {
       await synthRef.current.resume();
-      synthRef.current.playNote(note);
+      synthRef.current.startSustainedNote(note);
       setActiveNotes((prev) => new Set(prev).add(note));
     }
   };
 
   const releaseNote = (note: string) => {
+    if (synthRef.current) {
+      synthRef.current.stopSustainedNote(note);
+    }
     setActiveNotes((prev) => {
       const newSet = new Set(prev);
       newSet.delete(note);
@@ -104,9 +108,38 @@ export function View({ selectedResult }: ViewProps) {
     }
   }, [isPlayingMelody]);
 
+  const playSampleMelody = useCallback(async (sample: typeof SAMPLES[number]) => {
+    if (isPlayingMelody) return;
+    if (sample.args.action !== "play_melody" || !sample.args.melody) return;
+
+    const melody = sample.args.melody;
+    if (!melody.notes || melody.notes.length === 0) return;
+
+    setIsPlayingMelody(true);
+    const durations = melody.durations || melody.notes.map(() => 500);
+
+    try {
+      if (synthRef.current) {
+        await synthRef.current.resume();
+        await synthRef.current.playMelody(melody.notes, durations);
+      }
+    } finally {
+      setIsPlayingMelody(false);
+    }
+  }, [isPlayingMelody]);
+
   const isNoteActive = (note: string) => activeNotes.has(note);
 
   const hasMelody = pianoData?.melody && pianoData.melody.notes.length > 0;
+
+  // Filter samples to get only song samples
+  const songSamples = SAMPLES.filter(
+    (sample) =>
+      sample.args.action === "play_melody" &&
+      sample.args.melody &&
+      sample.args.melody.notes &&
+      sample.name !== "Play C Major Scale"
+  );
 
   if (!pianoData) {
     return null;
@@ -183,6 +216,29 @@ export function View({ selectedResult }: ViewProps) {
             </button>
           </div>
         )}
+
+        {/* Song Selection */}
+        <div className="mb-6">
+          <h3 className="text-white text-lg font-semibold mb-3 text-center">
+            Select a Song
+          </h3>
+          <div className="flex flex-wrap justify-center gap-2">
+            {songSamples.map((sample) => (
+              <button
+                key={sample.name}
+                onClick={() => playSampleMelody(sample)}
+                disabled={isPlayingMelody}
+                className={`py-2 px-4 rounded-lg font-medium text-sm transition-colors ${
+                  isPlayingMelody
+                    ? "bg-gray-600 cursor-not-allowed text-gray-400"
+                    : "bg-indigo-600 hover:bg-indigo-700 text-white"
+                }`}
+              >
+                {sample.args.title || sample.name}
+              </button>
+            ))}
+          </div>
+        </div>
 
         {/* Instructions */}
         <div className="text-center text-gray-300 text-sm">

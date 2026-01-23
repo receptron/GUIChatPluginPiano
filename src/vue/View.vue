@@ -82,6 +82,29 @@
         </button>
       </div>
 
+      <!-- Song Selection -->
+      <div class="mb-6">
+        <h3 class="text-white text-lg font-semibold mb-3 text-center">
+          Select a Song
+        </h3>
+        <div class="flex flex-wrap justify-center gap-2">
+          <button
+            v-for="sample in songSamples"
+            :key="sample.name"
+            @click="playSampleMelody(sample)"
+            :disabled="isPlayingMelody"
+            :class="[
+              'py-2 px-4 rounded-lg font-medium text-sm transition-colors',
+              isPlayingMelody
+                ? 'bg-gray-600 cursor-not-allowed text-gray-400'
+                : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+            ]"
+          >
+            {{ sample.args.title || sample.name }}
+          </button>
+        </div>
+      </div>
+
       <!-- Instructions -->
       <div class="text-center text-gray-300 text-sm">
         <p>Click keys to play notes</p>
@@ -99,6 +122,7 @@ import type { ToolResult } from "gui-chat-protocol";
 import type { PianoToolData } from "../core/types";
 import { PianoSynth } from "../core/audio";
 import { TOOL_NAME } from "../core/definition";
+import { SAMPLES } from "../core/samples";
 
 const props = defineProps<{
   selectedResult: ToolResult;
@@ -216,6 +240,17 @@ const hasMelody = computed(() => {
   return pianoData.value?.melody && pianoData.value.melody.notes.length > 0;
 });
 
+// Filter samples to get only song samples
+const songSamples = computed(() =>
+  SAMPLES.filter(
+    (sample) =>
+      sample.args.action === "play_melody" &&
+      sample.args.melody &&
+      sample.args.melody.notes &&
+      sample.name !== "Play C Major Scale"
+  )
+);
+
 function isNoteActive(note: string): boolean {
   return activeNotes.value.has(note);
 }
@@ -223,12 +258,15 @@ function isNoteActive(note: string): boolean {
 async function playNote(note: string): Promise<void> {
   if (synth.value) {
     await synth.value.resume();
-    synth.value.playNote(note);
+    synth.value.startSustainedNote(note);
     activeNotes.value.add(note);
   }
 }
 
 function releaseNote(note: string): void {
+  if (synth.value) {
+    synth.value.stopSustainedNote(note);
+  }
   activeNotes.value.delete(note);
 }
 
@@ -237,6 +275,26 @@ async function playMelodySequence(): Promise<void> {
 
   isPlayingMelody.value = true;
   const melody = pianoData.value.melody;
+  const durations = melody.durations || melody.notes.map(() => 500);
+
+  try {
+    if (synth.value) {
+      await synth.value.resume();
+      await synth.value.playMelody(melody.notes, durations);
+    }
+  } finally {
+    isPlayingMelody.value = false;
+  }
+}
+
+async function playSampleMelody(sample: typeof SAMPLES[number]): Promise<void> {
+  if (isPlayingMelody.value) return;
+  if (sample.args.action !== "play_melody" || !sample.args.melody) return;
+
+  const melody = sample.args.melody;
+  if (!melody.notes || melody.notes.length === 0) return;
+
+  isPlayingMelody.value = true;
   const durations = melody.durations || melody.notes.map(() => 500);
 
   try {

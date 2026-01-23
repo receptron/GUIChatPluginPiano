@@ -83,8 +83,22 @@ function sleep(ms: number): Promise<void> {
 /**
  * Simple piano synthesizer using Web Audio API
  */
+type SoundfontNoteNode = AudioNode & { stop: (when?: number) => void };
 type SoundfontInstrument = {
-  play: (note: string, when?: number, options?: { gain?: number; duration?: number }) => void;
+  play: (
+    note: string,
+    when?: number,
+    options?: {
+      gain?: number;
+      duration?: number;
+      attack?: number;
+      decay?: number;
+      sustain?: number;
+      release?: number;
+      adsr?: [number, number, number, number];
+      loop?: boolean;
+    }
+  ) => SoundfontNoteNode | void;
 };
 
 type AudioContextConstructor = new () => AudioContext;
@@ -110,6 +124,16 @@ const WARMUP_NOTES = [
   "C5", "C#5", "D5", "D#5", "E5", "F5", "F#5", "G5", "G#5", "A5", "A#5", "B5",
 ];
 
+type SustainedNote = {
+  kind: "soundfont" | "synth";
+  oscillator?: OscillatorNode;
+  overtone?: OscillatorNode;
+  gainNode?: GainNode;
+  soundfontNode?: SoundfontNoteNode;
+  startTime: number;
+  decayInterval: ReturnType<typeof setTimeout>;
+};
+
 export class PianoSynth {
   private audioContext: AudioContext | null = null;
   private instrument: SoundfontInstrument | null = null;
@@ -117,6 +141,8 @@ export class PianoSynth {
   private instrumentFailed = false;
   private audioUnlocked = false;
   private warmupDone = false;
+  private sustainedNotes: Map<string, SustainedNote> = new Map();
+  private soundfontTimeoutMs = 600;
 
   constructor() {}
 
@@ -137,9 +163,9 @@ export class PianoSynth {
         await this.resume();
       }
 
-      await this.ensureInstrument();
+      const instrumentReady = await this.waitForInstrumentReady(150);
 
-      if (this.instrument) {
+      if (instrumentReady && this.instrument) {
         this.debug("playNote: using soundfont", { note, duration, t: performance.now() });
         this.instrument.play(note, 0, {
           gain: 0.8,
@@ -149,7 +175,12 @@ export class PianoSynth {
         return;
       }
 
-      this.debug("playNote: using synth fallback", { note, duration, t: performance.now() });
+      this.debug("playNote: using synth fallback", {
+        note,
+        duration,
+        t: performance.now(),
+        instrumentReady,
+      });
       // Fallback while soundfont is loading or unavailable.
       this.playSynthNote(note, duration);
       this.debug("playNote: synth dispatched", { note, t: performance.now() });
@@ -182,13 +213,176 @@ export class PianoSynth {
   }
 
   /**
+   * Start a sustained note that continues until stopSustainedNote is called
+   * @param note - Note in scientific pitch notation
+   */
+  async startSustainedNote(note: string): Promise<void> {
+    try {
+      const audioContext = this.ensureAudioContext();
+      if (!audioContext) {
+        this.debug("startSustainedNote: no AudioContext available");
+        return;
+      }
+
+      if (audioContext.state !== "running") {
+        await this.resume();
+      }
+
+      // Stop existing sustained note if any
+      this.stopSustainedNote(note);
+
+      const instrumentReady = await this.waitForInstrumentReady(this.soundfontTimeoutMs);
+      if (instrumentReady && this.instrument) {
+        const now = audioContext.currentTime;
+        const maxDuration = 10000; // 10 seconds max
+        const soundfontNode = this.instrument.play(note, 0, {
+          gain: 0.85,
+          attack: 0.003,
+          decay: 0.35,
+          sustain: 0.6,
+          release: 0.2,
+          duration: maxDuration / 1000,
+        });
+
+        if (soundfontNode) {
+          const autoStopTime = setTimeout(() => {
+            this.stopSustainedNote(note);
+          }, maxDuration);
+
+          this.sustainedNotes.set(note, {
+            kind: "soundfont",
+            soundfontNode,
+            startTime: now,
+            decayInterval: autoStopTime,
+          });
+
+          this.debug("startSustainedNote: soundfont started", { note, t: performance.now() });
+          return;
+        }
+      }
+
+      const frequency = noteToFrequency(note);
+      const oscillator = audioContext.createOscillator();
+      const overtone = audioContext.createOscillator();
+      const filter = audioContext.createBiquadFilter();
+      const gainNode = audioContext.createGain();
+
+      // Blend a soft fundamental with a slightly detuned overtone
+      oscillator.type = 'sine';
+      oscillator.frequency.value = frequency;
+      overtone.type = 'triangle';
+      overtone.frequency.value = frequency * 2;
+      overtone.detune.value = -6;
+
+      filter.type = 'lowpass';
+      filter.frequency.value = 1800;
+      filter.Q.value = 0.6;
+
+      // Quick attack, then sustain with decay
+      const now = audioContext.currentTime;
+      const attackTime = 0.003;
+      const initialGain = 0.7;
+      const minGain = 0.1;
+      const decayDuration = 3000; // 3 seconds to reach minimum
+      const maxDuration = 10000; // 10 seconds max
+
+      gainNode.gain.setValueAtTime(0, now);
+      gainNode.gain.linearRampToValueAtTime(initialGain, now + attackTime);
+
+      oscillator.connect(filter);
+      overtone.connect(filter);
+      filter.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+
+      oscillator.start(now);
+      overtone.start(now);
+
+      // Schedule exponential decay over 3 seconds
+      gainNode.gain.exponentialRampToValueAtTime(minGain, now + attackTime + decayDuration / 1000);
+
+      // Auto-stop after 10 seconds
+      const autoStopTime = setTimeout(() => {
+        this.stopSustainedNote(note);
+      }, maxDuration);
+
+      this.sustainedNotes.set(note, {
+        kind: "synth",
+        oscillator,
+        overtone,
+        gainNode,
+        startTime: now,
+        decayInterval: autoStopTime,
+      });
+
+      this.debug("startSustainedNote: started", { note, t: performance.now() });
+    } catch (error) {
+      console.error('Error starting sustained note:', error);
+    }
+  }
+
+  /**
+   * Stop a sustained note with a quick fade out
+   * @param note - Note in scientific pitch notation
+   */
+  stopSustainedNote(note: string): void {
+    const sustained = this.sustainedNotes.get(note);
+    if (!sustained) return;
+
+    const audioContext = this.ensureAudioContext();
+    if (!audioContext) return;
+
+    if (sustained.kind === "soundfont") {
+      try {
+        sustained.soundfontNode?.stop(audioContext.currentTime);
+      } catch (error) {
+        this.debug("stopSustainedNote: soundfont stop failed", error);
+      }
+      clearTimeout(sustained.decayInterval);
+      this.sustainedNotes.delete(note);
+      this.debug("stopSustainedNote: soundfont stopped", { note, t: performance.now() });
+      return;
+    }
+
+    const now = audioContext.currentTime;
+    const releaseTime = 0.12;
+
+    // Fade out
+    sustained.gainNode?.gain.cancelScheduledValues(now);
+    sustained.gainNode?.gain.setValueAtTime(sustained.gainNode.gain.value, now);
+    sustained.gainNode?.gain.exponentialRampToValueAtTime(0.001, now + releaseTime);
+
+    // Stop oscillators
+    sustained.oscillator?.stop(now + releaseTime);
+    sustained.overtone?.stop(now + releaseTime);
+
+    // Clear auto-stop timer
+    clearTimeout(sustained.decayInterval);
+
+    this.sustainedNotes.delete(note);
+    this.debug("stopSustainedNote: stopped", { note, t: performance.now() });
+  }
+
+  /**
+   * Stop all sustained notes
+   */
+  stopAllSustainedNotes(): void {
+    const notes = Array.from(this.sustainedNotes.keys());
+    notes.forEach(note => this.stopSustainedNote(note));
+    this.debug("stopAllSustainedNotes: stopped all");
+  }
+
+  /**
    * Resume audio context (needed after user interaction)
    */
   async resume(): Promise<void> {
     const audioContext = this.ensureAudioContext();
-    if (audioContext && audioContext.state === 'suspended') {
-      this.debug("resume: resuming AudioContext");
-      await audioContext.resume();
+    if (audioContext && audioContext.state !== 'running') {
+      this.debug("resume: resuming AudioContext", { state: audioContext.state });
+      try {
+        await audioContext.resume();
+      } catch (error) {
+        this.debug("resume: failed", error);
+      }
     }
     if (audioContext) {
       this.unlockAudioContext(audioContext);
@@ -236,6 +430,31 @@ export class PianoSynth {
     } catch (error) {
       console.warn("Soundfont load failed, using synth fallback.", error);
     }
+  }
+
+  private async waitForInstrumentReady(timeoutMs: number): Promise<boolean> {
+    if (!this.shouldUseSoundfont()) {
+      return false;
+    }
+
+    void this.ensureInstrument();
+
+    if (this.instrument) {
+      return true;
+    }
+
+    if (!this.instrumentPromise) {
+      return false;
+    }
+
+    try {
+      await Promise.race([this.instrumentPromise, sleep(timeoutMs)]);
+    } catch (error) {
+      this.debug("waitForInstrumentReady: failed", error);
+      return false;
+    }
+
+    return this.instrument !== null;
   }
 
   private playSynthNote(note: string, duration: number): void {
