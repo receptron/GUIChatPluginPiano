@@ -195,3 +195,32 @@ return {
 **修正（Codex）**
 - Safari でも soundfont を有効化する方向に切り替え。
 - `globalThis.__pianoDisableSoundfont` で切り替え可能に整理。
+
+### 7. **plugin 実装後にしか発覚しない音遅延（plugin / Codex）**
+
+**状況**
+- MulmoChat に組み込んだ後、音が毎回 1秒前後遅れて鳴る。
+- テンプレート単体では遅延が目立たず、plugin 組み込みで顕在化。
+
+**plan の抜け**
+- `soundfont-player` の `when` 引数の仕様（「今からの秒数」）に関する注意が無く、
+  `audioContext.currentTime` を渡すと遅延する点が明記されていなかった。
+- plugin 組み込み後の挙動確認（MulmoChat 側での実運用テスト）まで想定していなかった。
+
+**修正（Codex）**
+- `instrument.play(note, 0, ...)` に変更して即時再生に統一。
+- plugin としての実環境でテストし、遅延の再現と改善を確認。
+
+### 8. **plugin 配布・検証手順が plan に無い（plugin / Codex）**
+
+**状況**
+- 実装後に MulmoChat に組み込む手順が手探りになった。
+- `yarn build` / `npm pack` / MulmoChat での `yarn add ./tgz` などが plan に書かれていなかった。
+
+**plan の抜け**
+- plugin としての配布・動作検証フローが未記載。
+- パッケージ名の変更やバージョン更新手順も明文化されていなかった。
+
+**修正（Codex）**
+- `yarn build` → `npm pack` → MulmoChat に `yarn add ./gui-chat-plugin-piano-x.y.z.tgz` を実施。
+- MulmoChat 側の CSS import 追加（`import "@gui-chat-plugin/piano/style.css";`）も必要であることを確認。
