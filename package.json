@@ -1,6 +1,6 @@
 {
   "name": "@gui-chat-plugin/piano",
-  "version": "0.1.3",
+  "version": "0.1.0",
   "description": "GUIChat Plugin Template with Chat Integration Demo",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -86,7 +86,7 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "gui-chat-protocol": "^0.0.1",
+    "gui-chat-protocol": "^0.0.3",
     "openai": "^4.77.0",
     "soundfont-player": "^0.12.0"
   }
