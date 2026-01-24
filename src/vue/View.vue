@@ -351,6 +351,11 @@ async function playMelodyWithHighlights(notes: string[], durations: number[]): P
 }
 
 function handleKeyDown(event: KeyboardEvent): void {
+  const target = event.target as HTMLElement | null;
+  const tagName = target?.tagName?.toLowerCase();
+  if (tagName === "input" || tagName === "textarea" || target?.isContentEditable) {
+    return;
+  }
   if (event.repeat) return;
   const key = event.key.toLowerCase();
   const note = keyMap[key];
@@ -360,6 +365,11 @@ function handleKeyDown(event: KeyboardEvent): void {
 }
 
 function handleKeyUp(event: KeyboardEvent): void {
+  const target = event.target as HTMLElement | null;
+  const tagName = target?.tagName?.toLowerCase();
+  if (tagName === "input" || tagName === "textarea" || target?.isContentEditable) {
+    return;
+  }
   const key = event.key.toLowerCase();
   const note = keyMap[key];
   if (note) {

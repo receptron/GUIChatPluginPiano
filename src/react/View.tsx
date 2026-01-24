@@ -127,6 +127,11 @@ export function View({ selectedResult }: ViewProps) {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const tagName = target?.tagName?.toLowerCase();
+      if (tagName === "input" || tagName === "textarea" || target?.isContentEditable) {
+        return;
+      }
       if (event.repeat) return;
       const key = event.key.toLowerCase();
       const note = keyMap[key];
@@ -136,6 +141,11 @@ export function View({ selectedResult }: ViewProps) {
     };
 
     const handleKeyUp = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const tagName = target?.tagName?.toLowerCase();
+      if (tagName === "input" || tagName === "textarea" || target?.isContentEditable) {
+        return;
+      }
       const key = event.key.toLowerCase();
       const note = keyMap[key];
       if (note) {
