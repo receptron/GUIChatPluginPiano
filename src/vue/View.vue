@@ -141,6 +141,8 @@ const activeNotes = ref<Set<string>>(new Set());
 const isPlayingMelody = ref(false);
 const pianoData = ref<PianoToolData | null>(null);
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 onMounted(() => {
   synth.value = new PianoSynth();
   window.addEventListener("keydown", handleKeyDown);
@@ -305,10 +307,7 @@ async function playMelodySequence(): Promise<void> {
   const durations = melody.durations || melody.notes.map(() => 500);
 
   try {
-    if (synth.value) {
-      await synth.value.resume();
-      await synth.value.playMelody(melody.notes, durations);
-    }
+    await playMelodyWithHighlights(melody.notes, durations);
   } finally {
     isPlayingMelody.value = false;
   }
@@ -325,12 +324,29 @@ async function playSampleMelody(sample: typeof SAMPLES[number]): Promise<void> {
   const durations = melody.durations || melody.notes.map(() => 500);
 
   try {
-    if (synth.value) {
-      await synth.value.resume();
-      await synth.value.playMelody(melody.notes, durations);
-    }
+    await playMelodyWithHighlights(melody.notes, durations);
   } finally {
     isPlayingMelody.value = false;
+  }
+}
+
+async function playMelodyWithHighlights(notes: string[], durations: number[]): Promise<void> {
+  if (!synth.value) return;
+  await synth.value.resume();
+
+  for (let i = 0; i < notes.length; i += 1) {
+    const note = notes[i];
+    const duration = durations[i] || 500;
+    synth.value.playNote(note, duration);
+    const nextNotes = new Set(activeNotes.value);
+    nextNotes.add(note);
+    activeNotes.value = nextNotes;
+    setTimeout(() => {
+      const releaseNotes = new Set(activeNotes.value);
+      releaseNotes.delete(note);
+      activeNotes.value = releaseNotes;
+    }, duration);
+    await sleep(duration);
   }
 }
 

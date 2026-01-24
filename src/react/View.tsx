@@ -11,6 +11,8 @@ import { SAMPLES } from "../core/samples";
 
 type ViewProps = ViewComponentProps<PianoToolData, PianoJsonData>;
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 export function View({ selectedResult }: ViewProps) {
   const [pianoData, setPianoData] = useState<PianoToolData | null>(null);
   const [activeNotes, setActiveNotes] = useState<Set<string>>(new Set());
@@ -48,6 +50,30 @@ export function View({ selectedResult }: ViewProps) {
     });
   }, []);
 
+  const playMelodyWithHighlights = useCallback(async (notes: string[], durations: number[]) => {
+    if (!synthRef.current) return;
+    await synthRef.current.resume();
+
+    for (let i = 0; i < notes.length; i += 1) {
+      const note = notes[i];
+      const duration = durations[i] || 500;
+      synthRef.current.playNote(note, duration);
+      setActiveNotes((prev) => {
+        const nextNotes = new Set(prev);
+        nextNotes.add(note);
+        return nextNotes;
+      });
+      setTimeout(() => {
+        setActiveNotes((prev) => {
+          const nextNotes = new Set(prev);
+          nextNotes.delete(note);
+          return nextNotes;
+        });
+      }, duration);
+      await sleep(duration);
+    }
+  }, []);
+
   const playMelodySequence = useCallback(async (data: PianoToolData) => {
     if (!data.melody || isPlayingMelody) return;
 
@@ -56,14 +82,11 @@ export function View({ selectedResult }: ViewProps) {
     const durations = melody.durations || melody.notes.map(() => 500);
 
     try {
-      if (synthRef.current) {
-        await synthRef.current.resume();
-        await synthRef.current.playMelody(melody.notes, durations);
-      }
+      await playMelodyWithHighlights(melody.notes, durations);
     } finally {
       setIsPlayingMelody(false);
     }
-  }, [isPlayingMelody]);
+  }, [isPlayingMelody, playMelodyWithHighlights]);
 
   const playSampleMelody = useCallback(async (sample: typeof SAMPLES[number]) => {
     if (isPlayingMelody) return;
@@ -76,14 +99,11 @@ export function View({ selectedResult }: ViewProps) {
     const durations = melody.durations || melody.notes.map(() => 500);
 
     try {
-      if (synthRef.current) {
-        await synthRef.current.resume();
-        await synthRef.current.playMelody(melody.notes, durations);
-      }
+      await playMelodyWithHighlights(melody.notes, durations);
     } finally {
       setIsPlayingMelody(false);
     }
-  }, [isPlayingMelody]);
+  }, [isPlayingMelody, playMelodyWithHighlights]);
 
   useEffect(() => {
     if (selectedResult?.toolName === TOOL_NAME && selectedResult.data) {
