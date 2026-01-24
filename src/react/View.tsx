@@ -25,6 +25,62 @@ export function View({ selectedResult }: ViewProps) {
     };
   }, []);
 
+  const playNote = useCallback(async (note: string) => {
+    if (synthRef.current) {
+      await synthRef.current.resume();
+      synthRef.current.startSustainedNote(note);
+      setActiveNotes((prev) => new Set(prev).add(note));
+    }
+  }, []);
+
+  const releaseNote = useCallback((note: string) => {
+    if (synthRef.current) {
+      synthRef.current.stopSustainedNote(note);
+    }
+    setActiveNotes((prev) => {
+      const newSet = new Set(prev);
+      newSet.delete(note);
+      return newSet;
+    });
+  }, []);
+
+  const playMelodySequence = useCallback(async (data: PianoToolData) => {
+    if (!data.melody || isPlayingMelody) return;
+
+    setIsPlayingMelody(true);
+    const melody = data.melody;
+    const durations = melody.durations || melody.notes.map(() => 500);
+
+    try {
+      if (synthRef.current) {
+        await synthRef.current.resume();
+        await synthRef.current.playMelody(melody.notes, durations);
+      }
+    } finally {
+      setIsPlayingMelody(false);
+    }
+  }, [isPlayingMelody]);
+
+  const playSampleMelody = useCallback(async (sample: typeof SAMPLES[number]) => {
+    if (isPlayingMelody) return;
+    if (sample.args.action !== "play_melody" || !sample.args.melody) return;
+
+    const melody = sample.args.melody;
+    if (!melody.notes || melody.notes.length === 0) return;
+
+    setIsPlayingMelody(true);
+    const durations = melody.durations || melody.notes.map(() => 500);
+
+    try {
+      if (synthRef.current) {
+        await synthRef.current.resume();
+        await synthRef.current.playMelody(melody.notes, durations);
+      }
+    } finally {
+      setIsPlayingMelody(false);
+    }
+  }, [isPlayingMelody]);
+
   useEffect(() => {
     if (selectedResult?.toolName === TOOL_NAME && selectedResult.data) {
       const data = selectedResult.data as PianoToolData;
@@ -70,63 +126,7 @@ export function View({ selectedResult }: ViewProps) {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
     };
-  }, []);
-
-  const playNote = async (note: string) => {
-    if (synthRef.current) {
-      await synthRef.current.resume();
-      synthRef.current.startSustainedNote(note);
-      setActiveNotes((prev) => new Set(prev).add(note));
-    }
-  };
-
-  const releaseNote = (note: string) => {
-    if (synthRef.current) {
-      synthRef.current.stopSustainedNote(note);
-    }
-    setActiveNotes((prev) => {
-      const newSet = new Set(prev);
-      newSet.delete(note);
-      return newSet;
-    });
-  };
-
-  const playMelodySequence = useCallback(async (data: PianoToolData) => {
-    if (!data.melody || isPlayingMelody) return;
-
-    setIsPlayingMelody(true);
-    const melody = data.melody;
-    const durations = melody.durations || melody.notes.map(() => 500);
-
-    try {
-      if (synthRef.current) {
-        await synthRef.current.resume();
-        await synthRef.current.playMelody(melody.notes, durations);
-      }
-    } finally {
-      setIsPlayingMelody(false);
-    }
-  }, [isPlayingMelody]);
-
-  const playSampleMelody = useCallback(async (sample: typeof SAMPLES[number]) => {
-    if (isPlayingMelody) return;
-    if (sample.args.action !== "play_melody" || !sample.args.melody) return;
-
-    const melody = sample.args.melody;
-    if (!melody.notes || melody.notes.length === 0) return;
-
-    setIsPlayingMelody(true);
-    const durations = melody.durations || melody.notes.map(() => 500);
-
-    try {
-      if (synthRef.current) {
-        await synthRef.current.resume();
-        await synthRef.current.playMelody(melody.notes, durations);
-      }
-    } finally {
-      setIsPlayingMelody(false);
-    }
-  }, [isPlayingMelody]);
+  }, [playNote, releaseNote]);
 
   const isNoteActive = (note: string) => activeNotes.has(note);
 

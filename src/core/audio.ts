@@ -98,7 +98,7 @@ type SoundfontInstrument = {
       adsr?: [number, number, number, number];
       loop?: boolean;
     }
-  ) => SoundfontNoteNode | void;
+  ) => unknown;
 };
 
 type AudioContextConstructor = new () => AudioContext;
@@ -242,7 +242,7 @@ export class PianoSynth {
           sustain: 0.6,
           release: 0.2,
           duration: maxDuration / 1000,
-        });
+        }) as unknown as SoundfontNoteNode | undefined;
 
         if (soundfontNode) {
           const autoStopTime = setTimeout(() => {
@@ -408,7 +408,7 @@ export class PianoSynth {
       this.instrumentPromise = (async () => {
         try {
           this.debug("ensureInstrument: loading soundfont module");
-          const Soundfont = (await import("soundfont-player")).default as SoundfontModule;
+          const Soundfont = (await import("soundfont-player")).default as unknown as SoundfontModule;
           this.debug("ensureInstrument: loading instrument");
           return await Soundfont.instrument(
             audioContext,
@@ -535,8 +535,9 @@ export class PianoSynth {
       const source = audioContext.createBufferSource();
       source.buffer = buffer;
       source.connect(audioContext.destination);
-      source.start(0);
-      source.stop(0);
+      const now = audioContext.currentTime;
+      source.start(now);
+      source.stop(now + 0.01);
       this.audioUnlocked = true;
       this.debug("unlockAudioContext: ok");
     } catch (error) {
