@@ -26,10 +26,14 @@ export function View({ selectedResult }: ViewProps) {
   }, []);
 
   const playNote = useCallback(async (note: string) => {
+    setActiveNotes((prev) => {
+      const nextNotes = new Set(prev);
+      nextNotes.add(note);
+      return nextNotes;
+    });
     if (synthRef.current) {
       await synthRef.current.resume();
       synthRef.current.startSustainedNote(note);
-      setActiveNotes((prev) => new Set(prev).add(note));
     }
   }, []);
 

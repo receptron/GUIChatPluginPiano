@@ -32,19 +32,19 @@
         <div class="relative inline-block">
           <!-- White Keys -->
           <div class="flex">
-            <div
-              v-for="key in whiteKeys"
-              :key="key.note"
-              :class="[
-                'relative w-12 h-40 bg-white border-2 border-gray-300 rounded-b-lg cursor-pointer',
-                'hover:bg-gray-100 active:bg-gray-200 transition-colors duration-75',
-                'flex items-end justify-center pb-3',
-                { 'bg-blue-200 border-blue-400': isNoteActive(key.note) }
-              ]"
-              @mousedown="playNote(key.note)"
-              @mouseup="releaseNote(key.note)"
-              @mouseleave="releaseNote(key.note)"
-            >
+          <div
+            v-for="key in whiteKeys"
+            :key="key.note"
+            :class="[
+              'relative w-12 h-40 bg-white border-2 border-gray-300 rounded-b-lg cursor-pointer',
+              'hover:bg-gray-100 active:bg-gray-200 transition-colors duration-75',
+              'flex items-end justify-center pb-3',
+              { '!bg-blue-200 !border-blue-400': isNoteActive(key.note) }
+            ]"
+            @mousedown="playNote(key.note)"
+            @mouseup="releaseNote(key.note)"
+            @mouseleave="releaseNote(key.note)"
+          >
               <span class="text-xs text-gray-500 font-semibold select-none">{{ key.label }}</span>
             </div>
           </div>
@@ -56,7 +56,7 @@
             :class="[
               'absolute top-0 w-7 h-24 bg-gray-900 border-2 border-gray-700 rounded-b-md cursor-pointer z-10',
               'hover:bg-gray-800 active:bg-gray-700 transition-colors duration-75',
-              { 'bg-blue-600 border-blue-500': isNoteActive(key.note) }
+              { '!bg-blue-600 !border-blue-500': isNoteActive(key.note) }
             ]"
             :style="{ left: key.position + 'px' }"
             @mousedown="playNote(key.note)"
@@ -279,12 +279,12 @@ function isNoteActive(note: string): boolean {
 }
 
 async function playNote(note: string): Promise<void> {
+  const nextNotes = new Set(activeNotes.value);
+  nextNotes.add(note);
+  activeNotes.value = nextNotes;
   if (synth.value) {
     await synth.value.resume();
     synth.value.startSustainedNote(note);
-    const nextNotes = new Set(activeNotes.value);
-    nextNotes.add(note);
-    activeNotes.value = nextNotes;
   }
 }
 
