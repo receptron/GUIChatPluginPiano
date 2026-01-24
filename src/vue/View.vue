@@ -62,7 +62,14 @@
             @mousedown="playNote(key.note)"
             @mouseup="releaseNote(key.note)"
             @mouseleave="releaseNote(key.note)"
-          />
+          >
+            <span
+              v-if="key.label"
+              class="absolute bottom-1 left-1/2 -translate-x-1/2 text-xs text-gray-100 font-semibold select-none"
+            >
+              {{ key.label }}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -177,29 +184,45 @@ watch(
   { immediate: true, deep: true }
 );
 
+const keyLabelMap: Record<string, string> = {
+  "C4": "A",
+  "C#4": "W",
+  "D4": "S",
+  "D#4": "E",
+  "E4": "D",
+  "F4": "F",
+  "F#4": "T",
+  "G4": "G",
+  "G#4": "Y",
+  "A4": "H",
+  "A#4": "U",
+  "B4": "J",
+  "C5": "K",
+};
+
 // Piano keyboard layout (2 octaves: C3-B5)
 const whiteKeys = computed(() => [
-  { note: "C3", label: "C" },
-  { note: "D3", label: "D" },
-  { note: "E3", label: "E" },
-  { note: "F3", label: "F" },
-  { note: "G3", label: "G" },
-  { note: "A3", label: "A" },
-  { note: "B3", label: "B" },
-  { note: "C4", label: "C" },
-  { note: "D4", label: "D" },
-  { note: "E4", label: "E" },
-  { note: "F4", label: "F" },
-  { note: "G4", label: "G" },
-  { note: "A4", label: "A" },
-  { note: "B4", label: "B" },
-  { note: "C5", label: "C" },
-  { note: "D5", label: "D" },
-  { note: "E5", label: "E" },
-  { note: "F5", label: "F" },
-  { note: "G5", label: "G" },
-  { note: "A5", label: "A" },
-  { note: "B5", label: "B" },
+  { note: "C3", label: "" },
+  { note: "D3", label: "" },
+  { note: "E3", label: "" },
+  { note: "F3", label: "" },
+  { note: "G3", label: "" },
+  { note: "A3", label: "" },
+  { note: "B3", label: "" },
+  { note: "C4", label: keyLabelMap["C4"] },
+  { note: "D4", label: keyLabelMap["D4"] },
+  { note: "E4", label: keyLabelMap["E4"] },
+  { note: "F4", label: keyLabelMap["F4"] },
+  { note: "G4", label: keyLabelMap["G4"] },
+  { note: "A4", label: keyLabelMap["A4"] },
+  { note: "B4", label: keyLabelMap["B4"] },
+  { note: "C5", label: keyLabelMap["C5"] },
+  { note: "D5", label: "" },
+  { note: "E5", label: "" },
+  { note: "F5", label: "" },
+  { note: "G5", label: "" },
+  { note: "A5", label: "" },
+  { note: "B5", label: "" },
 ]);
 
 const blackKeys = computed(() => {
@@ -208,23 +231,23 @@ const blackKeys = computed(() => {
   // Center black keys on white-key boundaries.
   const positions = [
     // Octave 3: C3=0, D3=1, E3=2, F3=3, G3=4, A3=5, B3=6
-    { note: "C#3", position: keyWidth * 1 - blackKeyWidth / 2 },
-    { note: "D#3", position: keyWidth * 2 - blackKeyWidth / 2 },
-    { note: "F#3", position: keyWidth * 4 - blackKeyWidth / 2 },
-    { note: "G#3", position: keyWidth * 5 - blackKeyWidth / 2 },
-    { note: "A#3", position: keyWidth * 6 - blackKeyWidth / 2 },
+    { note: "C#3", position: keyWidth * 1 - blackKeyWidth / 2, label: "" },
+    { note: "D#3", position: keyWidth * 2 - blackKeyWidth / 2, label: "" },
+    { note: "F#3", position: keyWidth * 4 - blackKeyWidth / 2, label: "" },
+    { note: "G#3", position: keyWidth * 5 - blackKeyWidth / 2, label: "" },
+    { note: "A#3", position: keyWidth * 6 - blackKeyWidth / 2, label: "" },
     // Octave 4: C4=7, D4=8, E4=9, F4=10, G4=11, A4=12, B4=13
-    { note: "C#4", position: keyWidth * 8 - blackKeyWidth / 2 },
-    { note: "D#4", position: keyWidth * 9 - blackKeyWidth / 2 },
-    { note: "F#4", position: keyWidth * 11 - blackKeyWidth / 2 },
-    { note: "G#4", position: keyWidth * 12 - blackKeyWidth / 2 },
-    { note: "A#4", position: keyWidth * 13 - blackKeyWidth / 2 },
+    { note: "C#4", position: keyWidth * 8 - blackKeyWidth / 2, label: keyLabelMap["C#4"] },
+    { note: "D#4", position: keyWidth * 9 - blackKeyWidth / 2, label: keyLabelMap["D#4"] },
+    { note: "F#4", position: keyWidth * 11 - blackKeyWidth / 2, label: keyLabelMap["F#4"] },
+    { note: "G#4", position: keyWidth * 12 - blackKeyWidth / 2, label: keyLabelMap["G#4"] },
+    { note: "A#4", position: keyWidth * 13 - blackKeyWidth / 2, label: keyLabelMap["A#4"] },
     // Octave 5: C5=14, D5=15, E5=16, F5=17, G5=18, A5=19, B5=20
-    { note: "C#5", position: keyWidth * 15 - blackKeyWidth / 2 },
-    { note: "D#5", position: keyWidth * 16 - blackKeyWidth / 2 },
-    { note: "F#5", position: keyWidth * 18 - blackKeyWidth / 2 },
-    { note: "G#5", position: keyWidth * 19 - blackKeyWidth / 2 },
-    { note: "A#5", position: keyWidth * 20 - blackKeyWidth / 2 },
+    { note: "C#5", position: keyWidth * 15 - blackKeyWidth / 2, label: "" },
+    { note: "D#5", position: keyWidth * 16 - blackKeyWidth / 2, label: "" },
+    { note: "F#5", position: keyWidth * 18 - blackKeyWidth / 2, label: "" },
+    { note: "G#5", position: keyWidth * 19 - blackKeyWidth / 2, label: "" },
+    { note: "A#5", position: keyWidth * 20 - blackKeyWidth / 2, label: "" },
   ];
   return positions;
 });
@@ -259,7 +282,9 @@ async function playNote(note: string): Promise<void> {
   if (synth.value) {
     await synth.value.resume();
     synth.value.startSustainedNote(note);
-    activeNotes.value.add(note);
+    const nextNotes = new Set(activeNotes.value);
+    nextNotes.add(note);
+    activeNotes.value = nextNotes;
   }
 }
 
@@ -267,7 +292,9 @@ function releaseNote(note: string): void {
   if (synth.value) {
     synth.value.stopSustainedNote(note);
   }
-  activeNotes.value.delete(note);
+  const nextNotes = new Set(activeNotes.value);
+  nextNotes.delete(note);
+  activeNotes.value = nextNotes;
 }
 
 async function playMelodySequence(): Promise<void> {

@@ -195,7 +195,13 @@ export function View({ selectedResult }: ViewProps) {
                 onMouseDown={() => playNote(key.note)}
                 onMouseUp={() => releaseNote(key.note)}
                 onMouseLeave={() => releaseNote(key.note)}
-              />
+              >
+                {keyLabelMap[key.note] && (
+                  <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-xs text-gray-100 font-semibold select-none">
+                    {keyLabelMap[key.note]}
+                  </span>
+                )}
+              </div>
             ))}
           </div>
         </div>
@@ -252,29 +258,45 @@ export function View({ selectedResult }: ViewProps) {
 
 export default View;
 
+const keyLabelMap: Record<string, string> = {
+  "C4": "A",
+  "C#4": "W",
+  "D4": "S",
+  "D#4": "E",
+  "E4": "D",
+  "F4": "F",
+  "F#4": "T",
+  "G4": "G",
+  "G#4": "Y",
+  "A4": "H",
+  "A#4": "U",
+  "B4": "J",
+  "C5": "K",
+};
+
 // Piano keyboard layout (2 octaves: C3-B5)
 const whiteKeys = [
-  { note: "C3", label: "C" },
-  { note: "D3", label: "D" },
-  { note: "E3", label: "E" },
-  { note: "F3", label: "F" },
-  { note: "G3", label: "G" },
-  { note: "A3", label: "A" },
-  { note: "B3", label: "B" },
-  { note: "C4", label: "C" },
-  { note: "D4", label: "D" },
-  { note: "E4", label: "E" },
-  { note: "F4", label: "F" },
-  { note: "G4", label: "G" },
-  { note: "A4", label: "A" },
-  { note: "B4", label: "B" },
-  { note: "C5", label: "C" },
-  { note: "D5", label: "D" },
-  { note: "E5", label: "E" },
-  { note: "F5", label: "F" },
-  { note: "G5", label: "G" },
-  { note: "A5", label: "A" },
-  { note: "B5", label: "B" },
+  { note: "C3", label: "" },
+  { note: "D3", label: "" },
+  { note: "E3", label: "" },
+  { note: "F3", label: "" },
+  { note: "G3", label: "" },
+  { note: "A3", label: "" },
+  { note: "B3", label: "" },
+  { note: "C4", label: keyLabelMap["C4"] },
+  { note: "D4", label: keyLabelMap["D4"] },
+  { note: "E4", label: keyLabelMap["E4"] },
+  { note: "F4", label: keyLabelMap["F4"] },
+  { note: "G4", label: keyLabelMap["G4"] },
+  { note: "A4", label: keyLabelMap["A4"] },
+  { note: "B4", label: keyLabelMap["B4"] },
+  { note: "C5", label: keyLabelMap["C5"] },
+  { note: "D5", label: "" },
+  { note: "E5", label: "" },
+  { note: "F5", label: "" },
+  { note: "G5", label: "" },
+  { note: "A5", label: "" },
+  { note: "B5", label: "" },
 ];
 
 const keyWidth = 48;
