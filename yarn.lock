@@ -1551,10 +1551,10 @@ graceful-fs@^4.2.4:
   resolved "https://registry.yarnpkg.com/graceful-fs/-/graceful-fs-4.2.11.tgz#4183e4e8bf08bb6e05bbb2f7d2e0c8f712ca40e3"
   integrity sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==
 
-gui-chat-protocol@^0.0.1:
-  version "0.0.1"
-  resolved "https://registry.yarnpkg.com/gui-chat-protocol/-/gui-chat-protocol-0.0.1.tgz#d0770d03a6669b075473a0d8753ca9506f718dcd"
-  integrity sha512-FStQbzQ7gvjDugWAmf4IOsvhqxe8/DUdA9VK9PgXwi44J2lZyEd1ww1bhThoHXpXT4djFpayQ2uMO1YMtQhCqA==
+gui-chat-protocol@^0.0.3:
+  version "0.0.3"
+  resolved "https://registry.yarnpkg.com/gui-chat-protocol/-/gui-chat-protocol-0.0.3.tgz#0e86a15ade6c46ed698abaa6ae6aed5edfdd8dde"
+  integrity sha512-usoH2h4rONFl4E54y1Cl9O3WXS73q3XVs5aiCTAxJa+462nW6QVGPPOGyeeieFqMmjCHNWBfvtHAklg+D+eFRA==
 
 has-flag@^4.0.0:
   version "4.0.0"
@@ -2165,10 +2165,10 @@ util-deprecate@^1.0.2:
   resolved "https://registry.yarnpkg.com/util-deprecate/-/util-deprecate-1.0.2.tgz#450d4dc9fa70de732762fbd2d4a28981419a0ccf"
   integrity sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==
 
-vite@^7.3.1:
-  version "7.3.1"
-  resolved "https://registry.yarnpkg.com/vite/-/vite-7.3.1.tgz#7f6cfe8fb9074138605e822a75d9d30b814d6507"
-  integrity sha512-w+N7Hifpc3gRjZ63vYBXA56dvvRlNWRczTdmCBBa+CotUzAPf5b7YMdMR/8CQoeYE5LX3W4wj6RYTgonm1b9DA==
+vite@^7.3.5:
+  version "7.3.5"
+  resolved "https://registry.yarnpkg.com/vite/-/vite-7.3.5.tgz#90c2d0b7b94a224e7e7dcf22d2912ff0b5291165"
+  integrity sha512-KuOaNhcnGFN2zIPGA7wRmzF+lJA1sea7rHq17aiJ++9lzY1WWG6Jpwqwe1KNbRVPIqHmr8GLYx7jbrQcN/7/ww==
   dependencies:
     esbuild "^0.27.0"
     fdir "^6.5.0"
