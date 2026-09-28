@@ -22,8 +22,9 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "outDir": "./dist"
+    "outDir": "./dist",
+    "rootDir": "./src"
   },
-  "include": ["src/react/**/*.ts", "src/react/**/*.tsx", "src/core/**/*.ts"],
+  "include": ["src/react/**/*.ts", "src/react/**/*.tsx", "src/core/**/*.ts", "src/vite-env.d.ts"],
   "exclude": ["node_modules", "dist"]
 }
