@@ -265,11 +265,12 @@ export function useChat(options: UseChatOptions) {
 
       if (message.tool_calls && message.tool_calls.length > 0) {
         // Handle tool calls
-        const toolCalls = message.tool_calls.map((tc) => ({
-          id: tc.id,
-          name: tc.function.name,
-          arguments: tc.function.arguments,
-        }));
+        // openai v5+ also returns custom (free-form) tool calls; this demo only defines function tools
+        const toolCalls = message.tool_calls.flatMap((tc) =>
+          tc.type === "function"
+            ? [{ id: tc.id, name: tc.function.name, arguments: tc.function.arguments }]
+            : [],
+        );
 
         messages.value.push({
           role: "assistant",
