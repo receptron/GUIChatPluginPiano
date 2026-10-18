@@ -1,6 +1,6 @@
 {
   "name": "@gui-chat-plugin/piano",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "GUIChat Plugin Template with Chat Integration Demo",
   "type": "module",
   "main": "./dist/index.cjs",
