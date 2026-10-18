@@ -13,9 +13,23 @@
  */
 export function noteToFrequency(note: string): number {
   const noteMap: Record<string, number> = {
-    'C': 0, 'C#': 1, 'Db': 1, 'D': 2, 'D#': 3, 'Eb': 3,
-    'E': 4, 'F': 5, 'F#': 6, 'Gb': 6, 'G': 7, 'G#': 8,
-    'Ab': 8, 'A': 9, 'A#': 10, 'Bb': 10, 'B': 11
+    C: 0,
+    "C#": 1,
+    Db: 1,
+    D: 2,
+    "D#": 3,
+    Eb: 3,
+    E: 4,
+    F: 5,
+    "F#": 6,
+    Gb: 6,
+    G: 7,
+    "G#": 8,
+    Ab: 8,
+    A: 9,
+    "A#": 10,
+    Bb: 10,
+    B: 11,
   };
 
   const match = note.match(/^([A-G]#?b?)(\d)$/);
@@ -41,24 +55,24 @@ export function noteToFrequency(note: string): number {
  */
 export function chordToNotes(chord: string): string[] {
   const chordMap: Record<string, string[]> = {
-    'C': ['C4', 'E4', 'G4'],
-    'Cm': ['C4', 'Eb4', 'G4'],
-    'C7': ['C4', 'E4', 'G4', 'Bb4'],
-    'Cmaj7': ['C4', 'E4', 'G4', 'B4'],
-    'D': ['D4', 'F#4', 'A4'],
-    'Dm': ['D4', 'F4', 'A4'],
-    'E': ['E4', 'G#4', 'B4'],
-    'Em': ['E4', 'G4', 'B4'],
-    'F': ['F4', 'A4', 'C5'],
-    'Fm': ['F4', 'Ab4', 'C5'],
-    'G': ['G4', 'B4', 'D5'],
-    'Gm': ['G4', 'Bb4', 'D5'],
-    'G7': ['G4', 'B4', 'D5', 'F5'],
-    'A': ['A4', 'C#5', 'E5'],
-    'Am': ['A4', 'C5', 'E5'],
-    'Am7': ['A4', 'C5', 'E5', 'G5'],
-    'B': ['B4', 'D#5', 'F#5'],
-    'Bm': ['B4', 'D5', 'F#5'],
+    C: ["C4", "E4", "G4"],
+    Cm: ["C4", "Eb4", "G4"],
+    C7: ["C4", "E4", "G4", "Bb4"],
+    Cmaj7: ["C4", "E4", "G4", "B4"],
+    D: ["D4", "F#4", "A4"],
+    Dm: ["D4", "F4", "A4"],
+    E: ["E4", "G#4", "B4"],
+    Em: ["E4", "G4", "B4"],
+    F: ["F4", "A4", "C5"],
+    Fm: ["F4", "Ab4", "C5"],
+    G: ["G4", "B4", "D5"],
+    Gm: ["G4", "Bb4", "D5"],
+    G7: ["G4", "B4", "D5", "F5"],
+    A: ["A4", "C#5", "E5"],
+    Am: ["A4", "C5", "E5"],
+    Am7: ["A4", "C5", "E5", "G5"],
+    B: ["B4", "D#5", "F#5"],
+    Bm: ["B4", "D5", "F#5"],
   };
 
   const notes = chordMap[chord];
@@ -73,7 +87,7 @@ export function chordToNotes(chord: string): string[] {
  * Sleep for a given duration
  */
 function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 // ============================================================================
@@ -97,7 +111,7 @@ type SoundfontInstrument = {
       release?: number;
       adsr?: [number, number, number, number];
       loop?: boolean;
-    }
+    },
   ) => unknown;
 };
 
@@ -111,17 +125,46 @@ type GlobalWithPianoDebug = typeof globalThis & {
 };
 
 type SoundfontModule = {
-  instrument: (
-    audioContext: AudioContext,
-    name: string,
-    options?: { soundfont?: string; format?: string }
-  ) => Promise<SoundfontInstrument>;
+  instrument: (audioContext: AudioContext, name: string, options?: { soundfont?: string; format?: string }) => Promise<SoundfontInstrument>;
 };
 
 const WARMUP_NOTES = [
-  "C3", "C#3", "D3", "D#3", "E3", "F3", "F#3", "G3", "G#3", "A3", "A#3", "B3",
-  "C4", "C#4", "D4", "D#4", "E4", "F4", "F#4", "G4", "G#4", "A4", "A#4", "B4",
-  "C5", "C#5", "D5", "D#5", "E5", "F5", "F#5", "G5", "G#5", "A5", "A#5", "B5",
+  "C3",
+  "C#3",
+  "D3",
+  "D#3",
+  "E3",
+  "F3",
+  "F#3",
+  "G3",
+  "G#3",
+  "A3",
+  "A#3",
+  "B3",
+  "C4",
+  "C#4",
+  "D4",
+  "D#4",
+  "E4",
+  "F4",
+  "F#4",
+  "G4",
+  "G#4",
+  "A4",
+  "A#4",
+  "B4",
+  "C5",
+  "C#5",
+  "D5",
+  "D#5",
+  "E5",
+  "F5",
+  "F#5",
+  "G5",
+  "G#5",
+  "A5",
+  "A#5",
+  "B5",
 ];
 
 type SustainedNote = {
@@ -185,7 +228,7 @@ export class PianoSynth {
       this.playSynthNote(note, duration);
       this.debug("playNote: synth dispatched", { note, t: performance.now() });
     } catch (error) {
-      console.error('Error playing note:', error);
+      console.error("Error playing note:", error);
     }
   }
 
@@ -195,7 +238,7 @@ export class PianoSynth {
    * @param duration - Duration in milliseconds (default: 500ms)
    */
   playChord(notes: string[], duration: number = 500): void {
-    notes.forEach(note => this.playNote(note, duration));
+    notes.forEach((note) => this.playNote(note, duration));
   }
 
   /**
@@ -268,13 +311,13 @@ export class PianoSynth {
       const gainNode = audioContext.createGain();
 
       // Blend a soft fundamental with a slightly detuned overtone
-      oscillator.type = 'sine';
+      oscillator.type = "sine";
       oscillator.frequency.value = frequency;
-      overtone.type = 'triangle';
+      overtone.type = "triangle";
       overtone.frequency.value = frequency * 2;
       overtone.detune.value = -6;
 
-      filter.type = 'lowpass';
+      filter.type = "lowpass";
       filter.frequency.value = 1800;
       filter.Q.value = 0.6;
 
@@ -316,7 +359,7 @@ export class PianoSynth {
 
       this.debug("startSustainedNote: started", { note, t: performance.now() });
     } catch (error) {
-      console.error('Error starting sustained note:', error);
+      console.error("Error starting sustained note:", error);
     }
   }
 
@@ -367,7 +410,7 @@ export class PianoSynth {
    */
   stopAllSustainedNotes(): void {
     const notes = Array.from(this.sustainedNotes.keys());
-    notes.forEach(note => this.stopSustainedNote(note));
+    notes.forEach((note) => this.stopSustainedNote(note));
     this.debug("stopAllSustainedNotes: stopped all");
   }
 
@@ -376,7 +419,7 @@ export class PianoSynth {
    */
   async resume(): Promise<void> {
     const audioContext = this.ensureAudioContext();
-    if (audioContext && audioContext.state !== 'running') {
+    if (audioContext && audioContext.state !== "running") {
       this.debug("resume: resuming AudioContext", { state: audioContext.state });
       try {
         await audioContext.resume();
@@ -410,11 +453,7 @@ export class PianoSynth {
           this.debug("ensureInstrument: loading soundfont module");
           const Soundfont = (await import("soundfont-player")).default as unknown as SoundfontModule;
           this.debug("ensureInstrument: loading instrument");
-          return await Soundfont.instrument(
-            audioContext,
-            "acoustic_grand_piano",
-            { soundfont: "MusyngKite", format: "mp3" }
-          );
+          return await Soundfont.instrument(audioContext, "acoustic_grand_piano", { soundfont: "MusyngKite", format: "mp3" });
         } catch (error) {
           this.instrumentFailed = true;
           this.debug("ensureInstrument: failed", error);
@@ -469,22 +508,22 @@ export class PianoSynth {
     const gainNode = this.audioContext.createGain();
 
     // Blend a soft fundamental with a slightly detuned overtone.
-    oscillator.type = 'sine';
+    oscillator.type = "sine";
     oscillator.frequency.value = frequency;
-    overtone.type = 'triangle';
+    overtone.type = "triangle";
     overtone.frequency.value = frequency * 2;
     overtone.detune.value = -6;
 
-    filter.type = 'lowpass';
+    filter.type = "lowpass";
     filter.frequency.value = 1800;
     filter.Q.value = 0.6;
 
     // ADSR envelope for more natural sound
     const now = this.audioContext.currentTime;
-    const attackTime = 0.003;  // quick hammer attack
-    const decayTime = 0.25;    // longer decay
+    const attackTime = 0.003; // quick hammer attack
+    const decayTime = 0.25; // longer decay
     const sustainLevel = 0.08; // piano-like sustain
-    const releaseTime = 0.12;  // short release
+    const releaseTime = 0.12; // short release
 
     gainNode.gain.setValueAtTime(0, now);
     gainNode.gain.linearRampToValueAtTime(0.7, now + attackTime);
@@ -508,8 +547,7 @@ export class PianoSynth {
     if (!this.audioContext) {
       try {
         const globalWithPiano = globalThis as GlobalWithPianoDebug;
-        const AudioContextConstructor =
-          globalWithPiano.AudioContext || globalWithPiano.webkitAudioContext;
+        const AudioContextConstructor = globalWithPiano.AudioContext || globalWithPiano.webkitAudioContext;
         if (!AudioContextConstructor) {
           console.warn("AudioContext is not supported in this browser.");
           return null;

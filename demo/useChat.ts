@@ -267,9 +267,7 @@ export function useChat(options: UseChatOptions) {
         // Handle tool calls
         // openai v5+ also returns custom (free-form) tool calls; this demo only defines function tools
         const toolCalls = message.tool_calls.flatMap((tc) =>
-          tc.type === "function"
-            ? [{ id: tc.id, name: tc.function.name, arguments: tc.function.arguments }]
-            : [],
+          tc.type === "function" ? [{ id: tc.id, name: tc.function.name, arguments: tc.function.arguments }] : [],
         );
 
         messages.value.push({
