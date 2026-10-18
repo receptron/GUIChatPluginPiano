@@ -17,14 +17,12 @@ export const TOOL_DEFINITION: ToolDefinition = {
       action: {
         type: "string",
         enum: ["play_notes", "play_chord", "play_melody", "show_keyboard"],
-        description:
-          "Action to perform: play_notes (single/multiple notes), play_chord (named chord), play_melody (sequence), show_keyboard (display only)",
+        description: "Action to perform: play_notes (single/multiple notes), play_chord (named chord), play_melody (sequence), show_keyboard (display only)",
       },
       notes: {
         type: "array",
         items: { type: "string" },
-        description:
-          "Notes to play (e.g., ['C4', 'E4', 'G4']). Use scientific pitch notation.",
+        description: "Notes to play (e.g., ['C4', 'E4', 'G4']). Use scientific pitch notation.",
       },
       chord: {
         type: "string",

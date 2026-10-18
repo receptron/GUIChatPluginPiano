@@ -15,10 +15,7 @@ import { chordToNotes } from "./audio";
 // Execute Function
 // ============================================================================
 
-export const executePiano = async (
-  _context: ToolContext,
-  args: PianoArgs,
-): Promise<ToolResult<PianoToolData, PianoJsonData>> => {
+export const executePiano = async (_context: ToolContext, args: PianoArgs): Promise<ToolResult<PianoToolData, PianoJsonData>> => {
   const { action, notes, chord, melody, title } = args;
 
   try {

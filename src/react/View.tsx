@@ -74,36 +74,42 @@ export function View({ selectedResult }: ViewProps) {
     }
   }, []);
 
-  const playMelodySequence = useCallback(async (data: PianoToolData) => {
-    if (!data.melody || isPlayingMelody) return;
+  const playMelodySequence = useCallback(
+    async (data: PianoToolData) => {
+      if (!data.melody || isPlayingMelody) return;
 
-    setIsPlayingMelody(true);
-    const melody = data.melody;
-    const durations = melody.durations || melody.notes.map(() => 500);
+      setIsPlayingMelody(true);
+      const melody = data.melody;
+      const durations = melody.durations || melody.notes.map(() => 500);
 
-    try {
-      await playMelodyWithHighlights(melody.notes, durations);
-    } finally {
-      setIsPlayingMelody(false);
-    }
-  }, [isPlayingMelody, playMelodyWithHighlights]);
+      try {
+        await playMelodyWithHighlights(melody.notes, durations);
+      } finally {
+        setIsPlayingMelody(false);
+      }
+    },
+    [isPlayingMelody, playMelodyWithHighlights],
+  );
 
-  const playSampleMelody = useCallback(async (sample: typeof SAMPLES[number]) => {
-    if (isPlayingMelody) return;
-    if (sample.args.action !== "play_melody" || !sample.args.melody) return;
+  const playSampleMelody = useCallback(
+    async (sample: (typeof SAMPLES)[number]) => {
+      if (isPlayingMelody) return;
+      if (sample.args.action !== "play_melody" || !sample.args.melody) return;
 
-    const melody = sample.args.melody;
-    if (!melody.notes || melody.notes.length === 0) return;
+      const melody = sample.args.melody;
+      if (!melody.notes || melody.notes.length === 0) return;
 
-    setIsPlayingMelody(true);
-    const durations = melody.durations || melody.notes.map(() => 500);
+      setIsPlayingMelody(true);
+      const durations = melody.durations || melody.notes.map(() => 500);
 
-    try {
-      await playMelodyWithHighlights(melody.notes, durations);
-    } finally {
-      setIsPlayingMelody(false);
-    }
-  }, [isPlayingMelody, playMelodyWithHighlights]);
+      try {
+        await playMelodyWithHighlights(melody.notes, durations);
+      } finally {
+        setIsPlayingMelody(false);
+      }
+    },
+    [isPlayingMelody, playMelodyWithHighlights],
+  );
 
   useEffect(() => {
     if (selectedResult?.toolName === TOOL_NAME && selectedResult.data) {
@@ -168,11 +174,7 @@ export function View({ selectedResult }: ViewProps) {
 
   // Filter samples to get only song samples
   const songSamples = SAMPLES.filter(
-    (sample) =>
-      sample.args.action === "play_melody" &&
-      sample.args.melody &&
-      sample.args.melody.notes &&
-      sample.name !== "Play C Major Scale"
+    (sample) => sample.args.action === "play_melody" && sample.args.melody && sample.args.melody.notes && sample.name !== "Play C Major Scale",
   );
 
   if (!pianoData) {
@@ -183,18 +185,10 @@ export function View({ selectedResult }: ViewProps) {
     <div className="w-full min-h-[600px] overflow-x-auto overflow-y-auto p-8 bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 rounded-lg">
       <div className="w-full mx-auto min-h-[500px] flex flex-col justify-center">
         {/* Title */}
-        {pianoData.state.title && (
-          <h2 className="text-white text-3xl font-bold mb-8 text-center">
-            {pianoData.state.title}
-          </h2>
-        )}
+        {pianoData.state.title && <h2 className="text-white text-3xl font-bold mb-8 text-center">{pianoData.state.title}</h2>}
 
         {/* Chord Display */}
-        {pianoData.state.chord && (
-          <div className="text-center mb-6 text-2xl font-semibold text-purple-300">
-            {pianoData.state.chord}
-          </div>
-        )}
+        {pianoData.state.chord && <div className="text-center mb-6 text-2xl font-semibold text-purple-300">{pianoData.state.chord}</div>}
 
         {/* Piano Keyboard */}
         <div className="flex justify-center mb-8">
@@ -211,9 +205,7 @@ export function View({ selectedResult }: ViewProps) {
                   onMouseUp={() => releaseNote(key.note)}
                   onMouseLeave={() => releaseNote(key.note)}
                 >
-                  <span className="text-xs text-gray-500 font-semibold select-none">
-                    {key.label}
-                  </span>
+                  <span className="text-xs text-gray-500 font-semibold select-none">{key.label}</span>
                 </div>
               ))}
             </div>
@@ -231,9 +223,7 @@ export function View({ selectedResult }: ViewProps) {
                 onMouseLeave={() => releaseNote(key.note)}
               >
                 {keyLabelMap[key.note] && (
-                  <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-xs text-gray-100 font-semibold select-none">
-                    {keyLabelMap[key.note]}
-                  </span>
+                  <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-xs text-gray-100 font-semibold select-none">{keyLabelMap[key.note]}</span>
                 )}
               </div>
             ))}
@@ -247,9 +237,7 @@ export function View({ selectedResult }: ViewProps) {
               onClick={() => playMelodySequence(pianoData)}
               disabled={isPlayingMelody}
               className={`py-3 px-6 rounded-lg font-semibold text-lg transition-colors ${
-                isPlayingMelody
-                  ? "bg-gray-600 cursor-not-allowed"
-                  : "bg-purple-600 hover:bg-purple-700 text-white"
+                isPlayingMelody ? "bg-gray-600 cursor-not-allowed" : "bg-purple-600 hover:bg-purple-700 text-white"
               }`}
             >
               {isPlayingMelody ? "Playing..." : "Play Melody"}
@@ -259,9 +247,7 @@ export function View({ selectedResult }: ViewProps) {
 
         {/* Song Selection */}
         <div className="mb-6">
-          <h3 className="text-white text-lg font-semibold mb-3 text-center">
-            Select a Song
-          </h3>
+          <h3 className="text-white text-lg font-semibold mb-3 text-center">Select a Song</h3>
           <div className="flex flex-wrap justify-center gap-2">
             {songSamples.map((sample) => (
               <button
@@ -269,9 +255,7 @@ export function View({ selectedResult }: ViewProps) {
                 onClick={() => playSampleMelody(sample)}
                 disabled={isPlayingMelody}
                 className={`py-2 px-4 rounded-lg font-medium text-sm transition-colors ${
-                  isPlayingMelody
-                    ? "bg-gray-600 cursor-not-allowed text-gray-400"
-                    : "bg-indigo-600 hover:bg-indigo-700 text-white"
+                  isPlayingMelody ? "bg-gray-600 cursor-not-allowed text-gray-400" : "bg-indigo-600 hover:bg-indigo-700 text-white"
                 }`}
               >
                 {sample.args.title || sample.name}
@@ -293,19 +277,19 @@ export function View({ selectedResult }: ViewProps) {
 export default View;
 
 const keyLabelMap: Record<string, string> = {
-  "C4": "A",
+  C4: "A",
   "C#4": "W",
-  "D4": "S",
+  D4: "S",
   "D#4": "E",
-  "E4": "D",
-  "F4": "F",
+  E4: "D",
+  F4: "F",
   "F#4": "T",
-  "G4": "G",
+  G4: "G",
   "G#4": "Y",
-  "A4": "H",
+  A4: "H",
   "A#4": "U",
-  "B4": "J",
-  "C5": "K",
+  B4: "J",
+  C5: "K",
 };
 
 // Piano keyboard layout (2 octaves: C3-B5)
@@ -358,7 +342,17 @@ const blackKeys = [
 ];
 
 const keyMap: Record<string, string> = {
-  "a": "C4", "w": "C#4", "s": "D4", "e": "D#4", "d": "E4",
-  "f": "F4", "t": "F#4", "g": "G4", "y": "G#4", "h": "A4",
-  "u": "A#4", "j": "B4", "k": "C5",
+  a: "C4",
+  w: "C#4",
+  s: "D4",
+  e: "D#4",
+  d: "E4",
+  f: "F4",
+  t: "F#4",
+  g: "G4",
+  y: "G#4",
+  h: "A4",
+  u: "A#4",
+  j: "B4",
+  k: "C5",
 };

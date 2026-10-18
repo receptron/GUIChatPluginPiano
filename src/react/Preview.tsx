@@ -21,31 +21,21 @@ export function Preview({ result }: PreviewProps) {
         <div className="text-3xl text-center">🎹</div>
 
         {/* Title */}
-        <div className="text-sm font-semibold text-gray-800 text-center truncate">
-          {pianoData.state.title || "Piano"}
-        </div>
+        <div className="text-sm font-semibold text-gray-800 text-center truncate">{pianoData.state.title || "Piano"}</div>
 
         {/* Chord Display */}
         {pianoData.state.chord && (
           <div className="text-center">
-            <span className="inline-block bg-purple-600 text-white text-xs font-bold py-1 px-3 rounded-full">
-              {pianoData.state.chord}
-            </span>
+            <span className="inline-block bg-purple-600 text-white text-xs font-bold py-1 px-3 rounded-full">{pianoData.state.chord}</span>
           </div>
         )}
 
         {/* Notes Count (for melody) */}
-        {pianoData.melody && (
-          <div className="text-xs text-center text-gray-600">
-            {pianoData.melody.notes.length} notes
-          </div>
-        )}
+        {pianoData.melody && <div className="text-xs text-center text-gray-600">{pianoData.melody.notes.length} notes</div>}
 
         {/* Last Played Notes */}
         {!pianoData.melody && pianoData.state.lastPlayed.length > 0 && (
-          <div className="text-xs text-center text-gray-600">
-            {pianoData.state.lastPlayed.join(", ")}
-          </div>
+          <div className="text-xs text-center text-gray-600">{pianoData.state.lastPlayed.join(", ")}</div>
         )}
       </div>
     </div>

@@ -6,9 +6,9 @@
       <p class="text-sm text-gray-400 mt-2">Waiting for data</p>
       <div class="mt-4 text-xs text-left max-w-2xl mx-auto bg-gray-800 p-4 rounded">
         <p class="mb-2">Debug Info:</p>
-        <p>selectedResult: {{ selectedResult ? 'exists' : 'null' }}</p>
+        <p>selectedResult: {{ selectedResult ? "exists" : "null" }}</p>
         <p>toolName: {{ selectedResult?.toolName }}</p>
-        <p>has data: {{ selectedResult?.data ? 'yes' : 'no' }}</p>
+        <p>has data: {{ selectedResult?.data ? "yes" : "no" }}</p>
         <pre class="mt-2 text-xs overflow-auto">{{ JSON.stringify(selectedResult, null, 2) }}</pre>
       </div>
     </div>
@@ -20,10 +20,7 @@
       </h2>
 
       <!-- Chord Display -->
-      <div
-        v-if="pianoData.state.chord"
-        class="text-center mb-6 text-2xl font-semibold text-purple-300"
-      >
+      <div v-if="pianoData.state.chord" class="text-center mb-6 text-2xl font-semibold text-purple-300">
         {{ pianoData.state.chord }}
       </div>
 
@@ -32,19 +29,19 @@
         <div class="relative inline-block">
           <!-- White Keys -->
           <div class="flex">
-          <div
-            v-for="key in whiteKeys"
-            :key="key.note"
-            :class="[
-              'relative w-12 h-40 bg-white border-2 border-gray-300 rounded-b-lg cursor-pointer',
-              'hover:bg-gray-100 active:bg-gray-200 transition-colors duration-75',
-              'flex items-end justify-center pb-3',
-              { '!bg-blue-200 !border-blue-400': isNoteActive(key.note) }
-            ]"
-            @mousedown="playNote(key.note)"
-            @mouseup="releaseNote(key.note)"
-            @mouseleave="releaseNote(key.note)"
-          >
+            <div
+              v-for="key in whiteKeys"
+              :key="key.note"
+              :class="[
+                'relative w-12 h-40 bg-white border-2 border-gray-300 rounded-b-lg cursor-pointer',
+                'hover:bg-gray-100 active:bg-gray-200 transition-colors duration-75',
+                'flex items-end justify-center pb-3',
+                { '!bg-blue-200 !border-blue-400': isNoteActive(key.note) },
+              ]"
+              @mousedown="playNote(key.note)"
+              @mouseup="releaseNote(key.note)"
+              @mouseleave="releaseNote(key.note)"
+            >
               <span class="text-xs text-gray-500 font-semibold select-none">{{ key.label }}</span>
             </div>
           </div>
@@ -56,17 +53,14 @@
             :class="[
               'absolute top-0 w-7 h-24 bg-gray-900 border-2 border-gray-700 rounded-b-md cursor-pointer z-10',
               'hover:bg-gray-800 active:bg-gray-700 transition-colors duration-75',
-              { '!bg-blue-600 !border-blue-500': isNoteActive(key.note) }
+              { '!bg-blue-600 !border-blue-500': isNoteActive(key.note) },
             ]"
             :style="{ left: key.position + 'px' }"
             @mousedown="playNote(key.note)"
             @mouseup="releaseNote(key.note)"
             @mouseleave="releaseNote(key.note)"
           >
-            <span
-              v-if="key.label"
-              class="absolute bottom-1 left-1/2 -translate-x-1/2 text-xs text-gray-100 font-semibold select-none"
-            >
+            <span v-if="key.label" class="absolute bottom-1 left-1/2 -translate-x-1/2 text-xs text-gray-100 font-semibold select-none">
               {{ key.label }}
             </span>
           </div>
@@ -80,20 +74,16 @@
           :disabled="isPlayingMelody"
           :class="[
             'py-3 px-6 rounded-lg font-semibold text-lg transition-colors',
-            isPlayingMelody
-              ? 'bg-gray-600 cursor-not-allowed'
-              : 'bg-purple-600 hover:bg-purple-700 text-white'
+            isPlayingMelody ? 'bg-gray-600 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700 text-white',
           ]"
         >
-          {{ isPlayingMelody ? 'Playing...' : 'Play Melody' }}
+          {{ isPlayingMelody ? "Playing..." : "Play Melody" }}
         </button>
       </div>
 
       <!-- Song Selection -->
       <div class="mb-6">
-        <h3 class="text-white text-lg font-semibold mb-3 text-center">
-          Select a Song
-        </h3>
+        <h3 class="text-white text-lg font-semibold mb-3 text-center">Select a Song</h3>
         <div class="flex flex-wrap justify-center gap-2">
           <button
             v-for="sample in songSamples"
@@ -102,9 +92,7 @@
             :disabled="isPlayingMelody"
             :class="[
               'py-2 px-4 rounded-lg font-medium text-sm transition-colors',
-              isPlayingMelody
-                ? 'bg-gray-600 cursor-not-allowed text-gray-400'
-                : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+              isPlayingMelody ? 'bg-gray-600 cursor-not-allowed text-gray-400' : 'bg-indigo-600 hover:bg-indigo-700 text-white',
             ]"
           >
             {{ sample.args.title || sample.name }}
@@ -115,9 +103,7 @@
       <!-- Instructions -->
       <div class="text-center text-gray-300 text-sm">
         <p>Click keys to play notes</p>
-        <p class="mt-1 text-gray-400">
-          Keyboard: A-K keys play C4-C5
-        </p>
+        <p class="mt-1 text-gray-400">Keyboard: A-K keys play C4-C5</p>
       </div>
     </div>
   </div>
@@ -158,13 +144,13 @@ onUnmounted(() => {
 watch(
   () => props.selectedResult,
   (newResult) => {
-    console.log('Piano View - selectedResult changed:', newResult);
-    console.log('Piano View - toolName:', newResult?.toolName);
-    console.log('Piano View - data:', newResult?.data);
+    console.log("Piano View - selectedResult changed:", newResult);
+    console.log("Piano View - toolName:", newResult?.toolName);
+    console.log("Piano View - data:", newResult?.data);
 
     if (newResult?.toolName === TOOL_NAME && newResult.data) {
       pianoData.value = newResult.data as PianoToolData;
-      console.log('Piano View - pianoData set:', pianoData.value);
+      console.log("Piano View - pianoData set:", pianoData.value);
 
       // Auto-play based on action
       if (pianoData.value.state.lastPlayed.length > 0) {
@@ -179,27 +165,27 @@ watch(
         playMelodySequence();
       }
     } else {
-      console.log('Piano View - No valid data, clearing pianoData');
+      console.log("Piano View - No valid data, clearing pianoData");
       pianoData.value = null;
     }
   },
-  { immediate: true, deep: true }
+  { immediate: true, deep: true },
 );
 
 const keyLabelMap: Record<string, string> = {
-  "C4": "A",
+  C4: "A",
   "C#4": "W",
-  "D4": "S",
+  D4: "S",
   "D#4": "E",
-  "E4": "D",
-  "F4": "F",
+  E4: "D",
+  F4: "F",
   "F#4": "T",
-  "G4": "G",
+  G4: "G",
   "G#4": "Y",
-  "A4": "H",
+  A4: "H",
   "A#4": "U",
-  "B4": "J",
-  "C5": "K",
+  B4: "J",
+  C5: "K",
 };
 
 // Piano keyboard layout (2 octaves: C3-B5)
@@ -256,9 +242,19 @@ const blackKeys = computed(() => {
 
 // PC Keyboard mapping
 const keyMap: Record<string, string> = {
-  "a": "C4", "w": "C#4", "s": "D4", "e": "D#4", "d": "E4",
-  "f": "F4", "t": "F#4", "g": "G4", "y": "G#4", "h": "A4",
-  "u": "A#4", "j": "B4", "k": "C5",
+  a: "C4",
+  w: "C#4",
+  s: "D4",
+  e: "D#4",
+  d: "E4",
+  f: "F4",
+  t: "F#4",
+  g: "G4",
+  y: "G#4",
+  h: "A4",
+  u: "A#4",
+  j: "B4",
+  k: "C5",
 };
 
 const hasMelody = computed(() => {
@@ -267,13 +263,7 @@ const hasMelody = computed(() => {
 
 // Filter samples to get only song samples
 const songSamples = computed(() =>
-  SAMPLES.filter(
-    (sample) =>
-      sample.args.action === "play_melody" &&
-      sample.args.melody &&
-      sample.args.melody.notes &&
-      sample.name !== "Play C Major Scale"
-  )
+  SAMPLES.filter((sample) => sample.args.action === "play_melody" && sample.args.melody && sample.args.melody.notes && sample.name !== "Play C Major Scale"),
 );
 
 function isNoteActive(note: string): boolean {
@@ -313,7 +303,7 @@ async function playMelodySequence(): Promise<void> {
   }
 }
 
-async function playSampleMelody(sample: typeof SAMPLES[number]): Promise<void> {
+async function playSampleMelody(sample: (typeof SAMPLES)[number]): Promise<void> {
   if (isPlayingMelody.value) return;
   if (sample.args.action !== "play_melody" || !sample.args.melody) return;
 

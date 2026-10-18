@@ -17,9 +17,7 @@
       </div>
 
       <!-- Notes Count (for melody) -->
-      <div v-if="pianoData.melody" class="text-xs text-center text-gray-600">
-        {{ pianoData.melody.notes.length }} notes
-      </div>
+      <div v-if="pianoData.melody" class="text-xs text-center text-gray-600">{{ pianoData.melody.notes.length }} notes</div>
 
       <!-- Last Played Notes -->
       <div v-else-if="pianoData.state.lastPlayed.length > 0" class="text-xs text-center text-gray-600">
